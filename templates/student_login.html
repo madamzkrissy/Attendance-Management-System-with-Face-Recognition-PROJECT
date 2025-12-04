@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - Face Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .login-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .login-left {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            padding: 3rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        
+        .login-right {
+            padding: 3rem;
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .login-header h2 {
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        .login-step {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .login-step.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .step-indicator {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+        
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+        
+        .step-circle.active {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .step-circle.completed {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .step-line {
+            flex: 1;
+            height: 3px;
+            background: #e9ecef;
+            max-width: 80px;
+        }
+        
+        .step-line.active {
+            background: var(--primary-color);
+        }
+        
+        .camera-container {
+            background: #000;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        #camera-feed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        
+        .face-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 250px;
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+        }
+        
+        .camera-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        
+        .btn-scan {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-scan:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-scan:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .sr-code-input {
+            font-size: 1.5rem;
+            letter-spacing: 0.2em;
+            text-align: center;
+            text-transform: uppercase;
+            padding: 1rem;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .sr-code-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .login-features {
+            list-style: none;
+            padding: 0;
+            margin: 2rem 0;
+        }
+        
+        .login-features li {
+            padding: 0.5rem 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .login-features i {
+            color: #4facfe;
+            margin-right: 0.75rem;
+        }
+        
+        .verification-result {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .verification-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .verification-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .student-info-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid var(--success-color);
+            display: none;
+        }
+        
+        .student-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            margin: 0 auto 1rem;
+        }
+        
+        .auto-logout-timer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .timer-warning {
+            animation: pulseWarning 1s infinite;
+        }
+        
+        @keyframes pulseWarning {
+            0% { background-color: rgba(231, 76, 60, 0.8); }
+            50% { background-color: rgba(231, 76, 60, 1); }
+            100% { background-color: rgba(231, 76, 60, 0.8); }
+        }
+        
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .qr-login {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 2rem;
+            border-top: 1px solid #dee2e6;
+        }
+        
+        .qr-code {
+            width: 150px;
+            height: 150px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: var(--primary-color);
+        }
+        
+        @media (max-width: 768px) {
+            .login-left {
+                padding: 2rem;
+            }
+            
+            .login-right {
+                padding: 2rem;
+            }
+            
+            .face-guide {
+                width: 150px;
+                height: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container login-container">
+        <div class="login-card">
+            <div class="row g-0">
+                <!-- Left Side - Info & Features -->
+                <div class="col-lg-5 login-left">
+                    <div class="login-header">
+                        <h1><i class="fas fa-graduation-cap"></i> Student Login</h1>
+                        <p>Secure access to your attendance dashboard</p>
+                    </div>
+                    
+                    <ul class="login-features">
+                        <li><i class="fas fa-shield-alt"></i> Two-factor authentication</li>
+                        <li><i class="fas fa-face-recognition"></i> Face verification</li>
+                        <li><i class="fas fa-clock"></i> Auto-logout after 3 minutes</li>
+                        <li><i class="fas fa-history"></i> View attendance history</li>
+                        <li><i class="fas fa-chart-line"></i> Track your performance</li>
+                        <li><i class="fas fa-bell"></i> Get notifications</li>
+                    </ul>
+                    
+                    <div class="mt-4">
+                        <div class="alert alert-light" style="background: rgba(255,255,255,0.1); border: none; color: white;">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Security Notice:</strong> Your face data is encrypted and only used for verification.
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <a href="{{ url_for('student_portal') }}" class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left"></i> Back to Student Portal
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Right Side - Login Form -->
+                <div class="col-lg-7 login-right">
+                    <!-- Step Indicator -->
+                    <div class="step-indicator">
+                        <div class="step-circle active" id="step1">1</div>
+                        <div class="step-line"></div>
+                        <div class="step-circle" id="step2">2</div>
+                        <div class="step-line"></div>
+                        <div class="step-circle" id="step3">3</div>
+                    </div>
+                    
+                    <!-- Step 1: SR Code Input -->
+                    <div class="login-step active" id="step1-content">
+                        <h3 class="text-center mb-4">Enter Your SR Code</h3>
+                        <p class="text-center text-muted mb-4">
+                            Please enter your SR Code to begin the login process
+                        </p>
+                        
+                        <div class="mb-4">
+                            <input type="text" 
+                                   class="form-control sr-code-input" 
+                                   id="srCode" 
+                                   placeholder="SR-12345"
+                                   maxlength="8"
+                                   pattern="SR-\d{5}"
+                                   title="Format: SR-##### (e.g., SR-12345)">
+                            <small class="text-muted d-block mt-2 text-center">
+                                Format: SR-##### (5 digits after SR-)
+                            </small>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-scan" onclick="verifySRCode()">
+                                <i class="fas fa-arrow-right"></i> Continue
+                            </button>
+                        </div>
+                        
+                        <div class="qr-login">
+                            <p class="text-muted">Or scan QR code for quick login</p>
+                            <div class="qr-code">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <small class="text-muted">
+                                Available at campus kiosks
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Face Verification -->
+                    <div class="login-step" id="step2-content">
+                        <h3 class="text-center mb-4">Face Verification</h3>
+                        <p class="text-center text-muted mb-4">
+                            Please look at the camera for face recognition
+                        </p>
+                        
+                        <!-- Camera Feed -->
+                        <div class="camera-container">
+                            <img id="camera-feed" src="{{ url_for('video_feed') }}" alt="Camera Feed">
+                            <div class="camera-overlay">
+                                <div class="face-guide"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Camera Controls -->
+                        <div class="camera-controls">
+                            <button class="btn btn-outline-primary" onclick="switchCamera()">
+                                <i class="fas fa-sync-alt"></i> Switch Camera
+                            </button>
+                            <button class="btn btn-scan" id="scanButton" onclick="scanFace()">
+                                <i class="fas fa-camera"></i> Scan Face
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="stopCamera()">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                        </div>
+                        
+                        <!-- Loading Spinner -->
+                        <div class="loading-spinner" id="scanningSpinner">
+                            <div class="spinner"></div>
+                            <p>Scanning face... Please wait</p>
+                        </div>
+                        
+                        <!-- Verification Result -->
+                        <div class="verification-result" id="verificationResult"></div>
+                        
+                        <!-- Student Info (Will be shown after verification) -->
+                        <div class="student-info-card" id="studentInfoCard">
+                            <div class="student-avatar" id="studentAvatar">JD</div>
+                            <h4 class="text-center" id="studentName">John Doe</h4>
+                            <p class="text-center text-muted mb-0" id="studentSRCode">SR-12345</p>
+                            <div class="text-center mt-3">
+                                <span class="badge bg-success" id="studentSection">CS-101</span>
+                                <span class="badge bg-info mx-1" id="studentYear">Year 2</span>
+                                <span class="badge bg-primary" id="studentDept">Computer Science</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Navigation -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button class="btn btn-outline-secondary" onclick="goToStep(1)">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button class="btn btn-success" id="continueButton" onclick="goToStep(3)" style="display: none;">
+                                <i class="fas fa-check"></i> Continue to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Login Complete -->
+                    <div class="login-step" id="step3-content">
+                        <div class="text-center py-5">
+                            <div class="mb-4" style="font-size: 5rem; color: var(--success-color);">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h3>Login Successful!</h3>
+                            <p class="text-muted mb-4">
+                                Welcome back, <span id="welcomeName">Student</span>!
+                            </p>
+                            
+                            <div class="alert alert-success">
+                                <i class="fas fa-shield-alt"></i>
+                                <strong>Secure Session Started:</strong> Auto-logout in <span id="logoutTimer">03:00</span>
+                            </div>
+                            
+                            <div class="mt-4">
+                                <h5>What you can do now:</h5>
+                                <div class="row mt-3">
+                                    <div class="col-md-4 mb-3">
+                                        <div class="p-3 border rounded text-center">
+                                            <i class="fas fa-history fa-2x text-primary mb-2"></i>
+                                            <h6>View Attendance</h6>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="p-3 border rounded text-center">
+                                            <i class="fas fa-calendar-alt fa-2x text-success mb-2"></i>
+                                            <h6>Check Schedule</h6>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 mb-3">
+                                        <div class="p-3 border rounded text-center">
+                                            <i class="fas fa-chart-bar fa-2x text-warning mb-2"></i>
+                                            <h6>View Reports</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid gap-2 mt-4">
+                                <button class="btn btn-primary btn-lg" onclick="goToDashboard()">
+                                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="logout()">
+                                    <i class="fas fa-sign-out-alt"></i> Logout Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Auto Logout Timer -->
+    <div class="auto-logout-timer" id="autoLogoutTimer">
+        <i class="fas fa-clock"></i> Auto logout in: <span id="sessionTimer">03:00</span>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let currentStep = 1;
+        let studentData = null;
+        let sessionTimer = 180; // 3 minutes in seconds
+        let timerInterval = null;
+        let cameraStream = null;
+        
+        // Step navigation
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.login-step').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Remove active from all step circles
+            document.querySelectorAll('.step-circle').forEach(el => {
+                el.classList.remove('active', 'completed');
+            });
+            
+            // Remove active from step lines
+            document.querySelectorAll('.step-line').forEach(el => {
+                el.classList.remove('active');
+            });
+            
+            // Show target step
+            document.getElementById(`step${step}-content`).classList.add('active');
+            
+            // Update step indicators
+            for (let i = 1; i <= step; i++) {
+                const stepCircle = document.getElementById(`step${i}`);
+                if (i === step) {
+                    stepCircle.classList.add('active');
+                } else {
+                    stepCircle.classList.add('completed');
+                }
+                
+                // Activate lines before current step
+                if (i < step) {
+                    const stepLine = stepCircle.nextElementSibling;
+                    if (stepLine && stepLine.classList.contains('step-line')) {
+                        stepLine.classList.add('active');
+                    }
+                }
+            }
+            
+            currentStep = step;
+            
+            // Special actions for specific steps
+            if (step === 2) {
+                startCamera();
+            } else if (step === 3) {
+                startSessionTimer();
+            }
+        }
+        
+        // SR Code verification
+        function verifySRCode() {
+            const srCode = document.getElementById('srCode').value.trim().toUpperCase();
+            const srCodePattern = /^SR-\d{5}$/;
+            
+            if (!srCodePattern.test(srCode)) {
+                alert('Please enter a valid SR Code (Format: SR-#####)');
+                return;
+            }
+            
+            // Show loading
+            document.getElementById('srCode').disabled = true;
+            const button = document.querySelector('#step1-content .btn-scan');
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+            button.disabled = true;
+            
+            // Simulate API call (replace with actual API)
+            setTimeout(() => {
+                // Demo student data
+                studentData = {
+                    srCode: srCode,
+                    name: "John Doe",
+                    firstName: "John",
+                    lastName: "Doe",
+                    section: "CS-101",
+                    year: "2",
+                    department: "Computer Science",
+                    email: "john.doe@sr.edu"
+                };
+                
+                // Update UI with student info
+                document.getElementById('studentAvatar').textContent = 
+                    studentData.firstName[0] + studentData.lastName[0];
+                document.getElementById('studentName').textContent = 
+                    `${studentData.firstName} ${studentData.lastName}`;
+                document.getElementById('studentSRCode').textContent = studentData.srCode;
+                document.getElementById('studentSection').textContent = studentData.section;
+                document.getElementById('studentYear').textContent = `Year ${studentData.year}`;
+                document.getElementById('studentDept').textContent = studentData.department;
+                
+                // Move to step 2
+                goToStep(2);
+            }, 1500);
+        }
+        
+        // Camera functions
+        function startCamera() {
+            // Camera is already streaming from Flask video feed
+            // We just need to ensure it's visible
+            const cameraFeed = document.getElementById('camera-feed');
+            cameraFeed.style.display = 'block';
+            
+            // Enable scan button after 1 second
+            setTimeout(() => {
+                document.getElementById('scanButton').disabled = false;
+            }, 1000);
+        }
+        
+        function stopCamera() {
+            // In a real implementation, we would stop the stream
+            // For now, just hide the feed
+            document.getElementById('camera-feed').style.display = 'none';
+        }
+        
+        function switchCamera() {
+            alert('Switching camera... (This feature requires multiple camera support)');
+        }
+        
+        // Face scanning
+        function scanFace() {
+            const button = document.getElementById('scanButton');
+            const spinner = document.getElementById('scanningSpinner');
+            const resultDiv = document.getElementById('verificationResult');
+            
+            // Show loading
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+            spinner.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            // Simulate face scanning process
+            setTimeout(() => {
+                // Random success/failure for demo
+                const isSuccess = Math.random() > 0.2; // 80% success rate
+                
+                if (isSuccess) {
+                    // Success
+                    resultDiv.className = 'verification-result verification-success';
+                    resultDiv.innerHTML = `
+                        <div style="font-size: 3rem; color: #28a745;">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h4>Face Verified Successfully!</h4>
+                        <p>Welcome back, ${studentData.firstName}!</p>
+                        <p class="small">Confidence: 96.7%</p>
+                    `;
+                    
+                    // Show student info
+                    document.getElementById('studentInfoCard').style.display = 'block';
+                    
+                    // Enable continue button
+                    document.getElementById('continueButton').style.display = 'block';
+                    
+                    // Update welcome name for next step
+                    document.getElementById('welcomeName').textContent = studentData.firstName;
+                    
+                } else {
+                    // Failure
+                    resultDiv.className = 'verification-result verification-error';
+                    resultDiv.innerHTML = `
+                        <div style="font-size: 3rem; color: #dc3545;">
+                            <i class="fas fa-times-circle"></i>
+                        </div>
+                        <h4>Face Verification Failed</h4>
+                        <p>Face doesn't match SR Code records</p>
+                        <button class="btn btn-outline-danger btn-sm mt-2" onclick="retryScan()">
+                            <i class="fas fa-redo"></i> Try Again
+                        </button>
+                    `;
+                }
+                
+                // Hide spinner and show result
+                spinner.style.display = 'none';
+                resultDiv.style.display = 'block';
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-camera"></i> Scan Face';
+                
+            }, 3000); // 3-second scanning simulation
+        }
+        
+        function retryScan() {
+            document.getElementById('verificationResult').style.display = 'none';
+            document.getElementById('scanButton').click();
+        }
+        
+        // Session management
+        function startSessionTimer() {
+            // Show auto logout timer
+            document.getElementById('autoLogoutTimer').style.display = 'block';
+            
+            // Start countdown
+            sessionTimer = 180; // Reset to 3 minutes
+            updateTimerDisplay();
+            
+            // Clear existing interval
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            // Start new interval
+            timerInterval = setInterval(() => {
+                sessionTimer--;
+                updateTimerDisplay();
+                
+                // Check for warning (last 30 seconds)
+                if (sessionTimer === 30) {
+                    document.getElementById('autoLogoutTimer').classList.add('timer-warning');
+                }
+                
+                // Auto logout at 0
+                if (sessionTimer <= 0) {
+                    autoLogout();
+                }
+                
+                // Reset activity on user interaction
+                document.addEventListener('click', resetTimer);
+                document.addEventListener('keypress', resetTimer);
+                document.addEventListener('mousemove', resetTimer);
+                
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(sessionTimer / 60);
+            const seconds = sessionTimer % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('sessionTimer').textContent = timeString;
+            document.getElementById('logoutTimer').textContent = timeString;
+        }
+        
+        function resetTimer() {
+            sessionTimer = 180; // Reset to 3 minutes
+            document.getElementById('autoLogoutTimer').classList.remove('timer-warning');
+        }
+        
+        function autoLogout() {
+            clearInterval(timerInterval);
+            
+            alert('Session expired due to inactivity. For security, you have been logged out.');
+            
+            // Redirect to student portal
+            window.location.href = "{{ url_for('student_portal') }}";
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                clearInterval(timerInterval);
+                window.location.href = "{{ url_for('student_portal') }}";
+            }
+        }
+        
+        // Navigation
+        function goToDashboard() {
+            // In real implementation, set session and redirect
+            alert(`Redirecting to ${studentData.name}'s dashboard...`);
+            // window.location.href = "/student/dashboard";
+            
+            // For demo, show a message
+            document.getElementById('step3-content').innerHTML = `
+                <div class="text-center py-5">
+                    <div class="mb-4" style="font-size: 5rem; color: var(--primary-color);">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h3>Redirecting to Dashboard...</h3>
+                    <p class="text-muted">Please wait while we load your information</p>
+                    <div class="spinner mt-4" style="margin: 0 auto;"></div>
+                </div>
+            `;
+            
+            // Simulate loading and redirect
+            setTimeout(() => {
+                // In real app: window.location.href = "/student/profile";
+                // For demo, go back to student portal
+                window.location.href = "{{ url_for('student_portal') }}";
+            }, 2000);
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Format SR Code input
+            const srCodeInput = document.getElementById('srCode');
+            srCodeInput.addEventListener('input', function(e) {
+                let value = e.target.value.toUpperCase();
+                
+                // Auto-add SR- prefix
+                if (!value.startsWith('SR-')) {
+                    if (value.startsWith('SR')) {
+                        value = 'SR-' + value.substring(2);
+                    } else if (value.length > 0) {
+                        value = 'SR-' + value;
+                    }
+                }
+                
+                // Remove any non-alphanumeric except dash
+                value = value.replace(/[^A-Z0-9-]/g, '');
+                
+                // Limit to SR- + 5 digits
+                if (value.length > 8) {
+                    value = value.substring(0, 8);
+                }
+                
+                e.target.value = value;
+            });
+            
+            // Enter key to submit SR Code
+            srCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    verifySRCode();
+                }
+            });
+            
+            // Demo: Auto-fill a test SR Code
+            srCodeInput.value = 'SR-12345';
+            
+            // Reset timer on any activity
+            document.addEventListener('click', resetTimer);
+            document.addEventListener('keypress', resetTimer);
+            document.addEventListener('mousemove', resetTimer);
+        });
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            stopCamera();
+        });
+    </script>
+</body>
+</html>

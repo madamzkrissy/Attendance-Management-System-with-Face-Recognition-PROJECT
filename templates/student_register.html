@@ -1,0 +1,1150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration - Face Attendance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .registration-container {
+            max-width: 1000px;
+            margin: 2rem auto;
+        }
+        
+        .registration-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .registration-header {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            padding: 2.5rem;
+            text-align: center;
+        }
+        
+        .registration-body {
+            padding: 2.5rem;
+        }
+        
+        .registration-steps {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+        
+        .registration-steps::before {
+            content: '';
+            position: absolute;
+            top: 25px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #e9ecef;
+            z-index: 1;
+        }
+        
+        .step {
+            text-align: center;
+            position: relative;
+            z-index: 2;
+            flex: 1;
+        }
+        
+        .step-circle {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: #e9ecef;
+            color: #6c757d;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin: 0 auto 0.5rem;
+            transition: all 0.3s;
+            border: 3px solid white;
+        }
+        
+        .step.active .step-circle {
+            background: var(--primary-color);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+        
+        .step.completed .step-circle {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-weight: 600;
+        }
+        
+        .step.active .step-label {
+            color: var(--primary-color);
+        }
+        
+        .step-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .step-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .form-section h4 {
+            color: var(--secondary-color);
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+            padding-left: 1rem;
+        }
+        
+        .camera-container {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            position: relative;
+            min-height: 300px;
+        }
+        
+        #camera-feed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .face-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 300px;
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 10px;
+            pointer-events: none;
+        }
+        
+        .camera-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        
+        .capture-preview {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            text-align: center;
+            display: none;
+        }
+        
+        .capture-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .capture-item {
+            background: white;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s;
+        }
+        
+        .capture-item.active {
+            border-color: var(--success-color);
+            background: #d4edda;
+        }
+        
+        .capture-number {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.5rem;
+            font-weight: bold;
+        }
+        
+        .capture-item.active .capture-number {
+            background: var(--success-color);
+        }
+        
+        .capture-image {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sr-code-input {
+            font-size: 1.5rem;
+            letter-spacing: 0.2em;
+            text-align: center;
+            text-transform: uppercase;
+            padding: 1rem;
+            border: 2px solid #dee2e6;
+            border-radius: 10px;
+            transition: all 0.3s;
+        }
+        
+        .sr-code-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .validation-message {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            display: none;
+        }
+        
+        .validation-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .validation-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            display: none;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .section-dropdowns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .registration-success {
+            text-align: center;
+            padding: 3rem;
+            display: none;
+        }
+        
+        .success-icon {
+            font-size: 5rem;
+            color: var(--success-color);
+            margin-bottom: 1.5rem;
+            animation: scaleIn 0.5s ease-out;
+        }
+        
+        @keyframes scaleIn {
+            0% { transform: scale(0); opacity: 0; }
+            70% { transform: scale(1.2); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        
+        .student-card {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+        }
+        
+        .student-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: white;
+            margin: 0 auto 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            font-weight: bold;
+        }
+        
+        .qr-display {
+            width: 150px;
+            height: 150px;
+            background: white;
+            border-radius: 10px;
+            margin: 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3rem;
+            color: var(--secondary-color);
+        }
+        
+        .face-requirements {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .requirements-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .requirements-list li {
+            padding: 0.5rem 0;
+            color: var(--secondary-color);
+        }
+        
+        .requirements-list i {
+            color: var(--primary-color);
+            margin-right: 0.75rem;
+        }
+        
+        .btn-registration {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 1rem 2rem;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s;
+            width: 100%;
+        }
+        
+        .btn-registration:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        .btn-registration:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        @media (max-width: 768px) {
+            .registration-container {
+                margin: 1rem;
+            }
+            
+            .registration-body {
+                padding: 1.5rem;
+            }
+            
+            .section-dropdowns {
+                grid-template-columns: 1fr;
+            }
+            
+            .face-guide {
+                width: 200px;
+                height: 250px;
+            }
+            
+            .capture-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid py-3">
+        <div class="registration-container">
+            <div class="registration-card">
+                <!-- Header -->
+                <div class="registration-header">
+                    <h1><i class="fas fa-user-graduate"></i> Student Registration</h1>
+                    <p class="mb-0">Register your SR Code and face for attendance tracking</p>
+                </div>
+                
+                <!-- Registration Steps -->
+                <div class="registration-body">
+                    <div class="registration-steps">
+                        <div class="step active" id="step1-indicator">
+                            <div class="step-circle">1</div>
+                            <div class="step-label">SR Code</div>
+                        </div>
+                        <div class="step" id="step2-indicator">
+                            <div class="step-circle">2</div>
+                            <div class="step-label">Personal Info</div>
+                        </div>
+                        <div class="step" id="step3-indicator">
+                            <div class="step-circle">3</div>
+                            <div class="step-label">Face Capture</div>
+                        </div>
+                        <div class="step" id="step4-indicator">
+                            <div class="step-circle">4</div>
+                            <div class="step-label">Complete</div>
+                        </div>
+                    </div>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Step 1: SR Code Validation -->
+                    <div class="step-content active" id="step1-content">
+                        <div class="form-section">
+                            <h4><i class="fas fa-id-card"></i> Enter Your SR Code</h4>
+                            <p class="text-muted mb-4">
+                                Please enter your SR Code in the format: SR-##### (5 digits after SR-)
+                            </p>
+                            
+                            <div class="mb-4">
+                                <input type="text" 
+                                       class="form-control sr-code-input" 
+                                       id="srCode" 
+                                       placeholder="SR-12345"
+                                       maxlength="8"
+                                       pattern="SR-\d{5}"
+                                       title="Format: SR-##### (e.g., SR-12345)">
+                                <small class="text-muted d-block mt-2 text-center">
+                                    Example: SR-10001, SR-20015, SR-34567
+                                </small>
+                            </div>
+                            
+                            <div class="validation-message" id="srCodeValidation"></div>
+                            
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('student_portal') }}" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left"></i> Back to Portal
+                                </a>
+                                <button class="btn btn-primary" onclick="validateSRCode()">
+                                    <i class="fas fa-check"></i> Validate SR Code
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Important:</strong> Your SR Code is unique and permanent. 
+                            It will be used for all attendance tracking.
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2: Personal Information -->
+                    <div class="step-content" id="step2-content">
+                        <div class="form-section">
+                            <h4><i class="fas fa-user"></i> Personal Information</h4>
+                            <p class="text-muted mb-4">
+                                Please fill in your personal details
+                            </p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">First Name *</label>
+                                    <input type="text" class="form-control" id="firstName" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Last Name *</label>
+                                    <input type="text" class="form-control" id="lastName" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Email Address</label>
+                                    <input type="email" class="form-control" id="email">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Phone Number</label>
+                                    <input type="tel" class="form-control" id="phone">
+                                </div>
+                            </div>
+                            
+                            <div class="section-dropdowns">
+                                <div>
+                                    <label class="form-label">Department *</label>
+                                    <select class="form-select" id="department" required>
+                                        <option value="">Select Department</option>
+                                        <option value="Computer Science">Computer Science</option>
+                                        <option value="Information Technology">Information Technology</option>
+                                        <option value="Engineering">Engineering</option>
+                                        <option value="Business">Business</option>
+                                        <option value="Arts">Arts</option>
+                                        <option value="Science">Science</option>
+                                        <option value="Education">Education</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label class="form-label">Section *</label>
+                                    <select class="form-select" id="section" required>
+                                        <option value="">Select Section</option>
+                                        <!-- Sections will be populated based on department -->
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label">Year Level</label>
+                                    <select class="form-select" id="yearLevel">
+                                        <option value="1">1st Year</option>
+                                        <option value="2">2nd Year</option>
+                                        <option value="3">3rd Year</option>
+                                        <option value="4">4th Year</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Semester</label>
+                                    <select class="form-select" id="semester">
+                                        <option value="1">1st Semester</option>
+                                        <option value="2">2nd Semester</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-outline-secondary" onclick="goToStep(1)">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button class="btn btn-primary" onclick="validatePersonalInfo()">
+                                <i class="fas fa-arrow-right"></i> Continue to Face Capture
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3: Face Capture -->
+                    <div class="step-content" id="step3-content">
+                        <div class="form-section">
+                            <h4><i class="fas fa-camera"></i> Face Capture</h4>
+                            <p class="text-muted mb-4">
+                                We need to capture 3 photos of your face for recognition
+                            </p>
+                            
+                            <!-- Camera Feed -->
+                            <div class="camera-container">
+                                <img id="camera-feed" src="{{ url_for('video_feed') }}" alt="Camera Feed">
+                                <div class="face-guide"></div>
+                            </div>
+                            
+                            <!-- Camera Controls -->
+                            <div class="camera-controls">
+                                <button class="btn btn-outline-primary" onclick="switchCamera()">
+                                    <i class="fas fa-sync-alt"></i> Switch Camera
+                                </button>
+                                <button class="btn btn-success" id="captureButton" onclick="captureFace()">
+                                    <i class="fas fa-camera"></i> Capture Photo
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="stopCamera()">
+                                    <i class="fas fa-stop"></i> Stop Camera
+                                </button>
+                            </div>
+                            
+                            <!-- Capture Progress -->
+                            <div class="capture-preview" id="capturePreview">
+                                <h5>Capture Progress (3/3 needed)</h5>
+                                
+                                <div class="capture-grid">
+                                    <div class="capture-item" id="capture1">
+                                        <div class="capture-number">1</div>
+                                        <img class="capture-image" id="preview1" src="" alt="Capture 1">
+                                        <small>Front View</small>
+                                    </div>
+                                    <div class="capture-item" id="capture2">
+                                        <div class="capture-number">2</div>
+                                        <img class="capture-image" id="preview2" src="" alt="Capture 2">
+                                        <small>Slight Left</small>
+                                    </div>
+                                    <div class="capture-item" id="capture3">
+                                        <div class="capture-number">3</div>
+                                        <img class="capture-image" id="preview3" src="" alt="Capture 3">
+                                        <small>Slight Right</small>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-3">
+                                    <button class="btn btn-warning" onclick="retakeAll()">
+                                        <i class="fas fa-redo"></i> Retake All Photos
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <!-- Face Requirements -->
+                            <div class="face-requirements">
+                                <h6><i class="fas fa-lightbulb"></i> Requirements for good face capture:</h6>
+                                <ul class="requirements-list">
+                                    <li><i class="fas fa-check-circle"></i> Face the camera directly</li>
+                                    <li><i class="fas fa-check-circle"></i> Good lighting (no shadows on face)</li>
+                                    <li><i class="fas fa-check-circle"></i> No glasses or hats</li>
+                                    <li><i class="fas fa-check-circle"></i> Neutral expression</li>
+                                    <li><i class="fas fa-check-circle"></i> Clear background</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <!-- Loading Spinner -->
+                        <div class="loading-spinner" id="processingSpinner">
+                            <div class="spinner"></div>
+                            <p>Processing face data... Please wait</p>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-outline-secondary" onclick="goToStep(2)">
+                                <i class="fas fa-arrow-left"></i> Back
+                            </button>
+                            <button class="btn btn-primary" id="completeCaptureButton" onclick="completeFaceCapture()" disabled>
+                                <i class="fas fa-check"></i> Complete Registration
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 4: Registration Complete -->
+                    <div class="step-content" id="step4-content">
+                        <div class="registration-success">
+                            <div class="success-icon">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <h2>Registration Successful!</h2>
+                            <p class="lead mb-4">Welcome to the Face Attendance System</p>
+                            
+                            <!-- Student Card -->
+                            <div class="student-card">
+                                <div class="student-avatar" id="registeredAvatar">JD</div>
+                                <h3 id="registeredName">John Doe</h3>
+                                <p class="mb-2" id="registeredSRCode">SR-12345</p>
+                                <p class="mb-0" id="registeredSection">CS-101 • Computer Science</p>
+                            </div>
+                            
+                            <!-- QR Code -->
+                            <div class="mt-4">
+                                <h5>Your Attendance QR Code</h5>
+                                <div class="qr-display">
+                                    <i class="fas fa-qrcode"></i>
+                                </div>
+                                <p class="text-muted">Scan this at campus kiosks for quick attendance</p>
+                            </div>
+                            
+                            <!-- Next Steps -->
+                            <div class="alert alert-success mt-4">
+                                <h6><i class="fas fa-list-check"></i> Next Steps:</h6>
+                                <ul class="mb-0">
+                                    <li>Your face data has been registered successfully</li>
+                                    <li>You can now use face recognition for attendance</li>
+                                    <li>Download your QR code for backup</li>
+                                    <li>Login to your profile dashboard to view attendance</li>
+                                </ul>
+                            </div>
+                            
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2 mt-4">
+                                <button class="btn btn-primary btn-lg" onclick="goToDashboard()">
+                                    <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                                </button>
+                                <button class="btn btn-outline-primary" onclick="downloadQRCode()">
+                                    <i class="fas fa-download"></i> Download QR Code
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="scanNow()">
+                                    <i class="fas fa-camera"></i> Test Face Scan Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Registration Form (hidden) -->
+                    <form id="registrationForm" method="POST" action="{{ url_for('student_register') }}" style="display: none;">
+                        <input type="hidden" name="sr_code" id="formSrCode">
+                        <input type="hidden" name="first_name" id="formFirstName">
+                        <input type="hidden" name="last_name" id="formLastName">
+                        <input type="hidden" name="email" id="formEmail">
+                        <input type="hidden" name="phone" id="formPhone">
+                        <input type="hidden" name="department" id="formDepartment">
+                        <input type="hidden" name="section" id="formSection">
+                        <input type="hidden" name="year_level" id="formYearLevel">
+                        <input type="hidden" name="face_images" id="formFaceImages">
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="text-center mt-4">
+                <p class="text-muted">
+                    <i class="fas fa-shield-alt"></i> Your face data is encrypted and secure
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-lock"></i> Privacy protected
+                    <span class="mx-2">•</span>
+                    <i class="fas fa-clock"></i> Real-time attendance tracking
+                </p>
+                <small class="text-muted">
+                    Need help? Contact: Registration Office - Room 101
+                </small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let currentStep = 1;
+        let srCodeValid = false;
+        let captureCount = 0;
+        let capturedImages = [];
+        let cameraStream = null;
+        let studentData = {};
+        
+        // Step navigation
+        function goToStep(step) {
+            // Update current step
+            currentStep = step;
+            
+            // Hide all step contents
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Update step indicators
+            document.querySelectorAll('.step').forEach((stepEl, index) => {
+                stepEl.classList.remove('active', 'completed');
+                
+                if (index + 1 === step) {
+                    stepEl.classList.add('active');
+                } else if (index + 1 < step) {
+                    stepEl.classList.add('completed');
+                }
+            });
+            
+            // Show target step content
+            document.getElementById(`step${step}-content`).classList.add('active');
+            
+            // Special actions for specific steps
+            if (step === 3) {
+                startCamera();
+            } else if (step === 4) {
+                completeRegistration();
+            }
+        }
+        
+        // SR Code validation
+        function validateSRCode() {
+            const srCodeInput = document.getElementById('srCode');
+            const srCode = srCodeInput.value.trim().toUpperCase();
+            const validationDiv = document.getElementById('srCodeValidation');
+            const srCodePattern = /^SR-\d{5}$/;
+            
+            // Reset validation
+            validationDiv.style.display = 'none';
+            validationDiv.className = 'validation-message';
+            
+            // Check format
+            if (!srCodePattern.test(srCode)) {
+                validationDiv.innerHTML = `
+                    <i class="fas fa-times-circle"></i>
+                    <strong>Invalid Format:</strong> SR Code must be in SR-##### format (5 digits)
+                `;
+                validationDiv.className = 'validation-message validation-error';
+                validationDiv.style.display = 'block';
+                srCodeValid = false;
+                return;
+            }
+            
+            // Show loading
+            srCodeInput.disabled = true;
+            const button = document.querySelector('#step1-content .btn-primary');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Checking...';
+            button.disabled = true;
+            
+            // Simulate API call to check if SR Code exists
+            setTimeout(() => {
+                // Demo - check if SR Code is already registered
+                const existingCodes = ['SR-10001', 'SR-10002', 'SR-10003'];
+                
+                if (existingCodes.includes(srCode)) {
+                    validationDiv.innerHTML = `
+                        <i class="fas fa-times-circle"></i>
+                        <strong>Already Registered:</strong> This SR Code is already registered
+                    `;
+                    validationDiv.className = 'validation-message validation-error';
+                    validationDiv.style.display = 'block';
+                    srCodeValid = false;
+                } else {
+                    validationDiv.innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Valid SR Code:</strong> ${srCode} is available for registration
+                    `;
+                    validationDiv.className = 'validation-message validation-success';
+                    validationDiv.style.display = 'block';
+                    srCodeValid = true;
+                    
+                    // Store SR Code
+                    studentData.srCode = srCode;
+                    
+                    // Auto-advance to next step after 1 second
+                    setTimeout(() => {
+                        goToStep(2);
+                    }, 1000);
+                }
+                
+                // Reset button
+                button.innerHTML = originalText;
+                button.disabled = false;
+                srCodeInput.disabled = false;
+                
+            }, 1500); // Simulate network delay
+        }
+        
+        // Department-Section mapping
+        const departmentSections = {
+            'Computer Science': ['CS-101', 'CS-102', 'CS-201', 'CS-202'],
+            'Information Technology': ['IT-101', 'IT-102', 'IT-201', 'IT-202'],
+            'Engineering': ['ENG-101', 'ENG-102', 'ENG-201'],
+            'Business': ['BUS-101', 'BUS-102', 'BUS-201'],
+            'Arts': ['ART-101', 'ART-102'],
+            'Science': ['SCI-101', 'SCI-102'],
+            'Education': ['EDU-101', 'EDU-102']
+        };
+        
+        // Update sections based on department
+        document.getElementById('department').addEventListener('change', function() {
+            const department = this.value;
+            const sectionSelect = document.getElementById('section');
+            
+            // Clear existing options
+            sectionSelect.innerHTML = '<option value="">Select Section</option>';
+            
+            // Add sections for selected department
+            if (department && departmentSections[department]) {
+                departmentSections[department].forEach(section => {
+                    const option = document.createElement('option');
+                    option.value = section;
+                    option.textContent = section;
+                    sectionSelect.appendChild(option);
+                });
+            }
+        });
+        
+        // Validate personal information
+        function validatePersonalInfo() {
+            const firstName = document.getElementById('firstName').value.trim();
+            const lastName = document.getElementById('lastName').value.trim();
+            const department = document.getElementById('department').value;
+            const section = document.getElementById('section').value;
+            
+            // Check required fields
+            if (!firstName || !lastName || !department || !section) {
+                alert('Please fill in all required fields (marked with *)');
+                return;
+            }
+            
+            // Store student data
+            studentData.firstName = firstName;
+            studentData.lastName = lastName;
+            studentData.email = document.getElementById('email').value;
+            studentData.phone = document.getElementById('phone').value;
+            studentData.department = department;
+            studentData.section = section;
+            studentData.yearLevel = document.getElementById('yearLevel').value;
+            studentData.semester = document.getElementById('semester').value;
+            
+            // Go to face capture step
+            goToStep(3);
+        }
+        
+        // Camera functions
+        function startCamera() {
+            // Camera is already streaming from Flask video feed
+            // We just need to ensure it's visible
+            const cameraFeed = document.getElementById('camera-feed');
+            cameraFeed.style.display = 'block';
+            
+            // Enable capture button after 1 second
+            setTimeout(() => {
+                document.getElementById('captureButton').disabled = false;
+            }, 1000);
+        }
+        
+        function stopCamera() {
+            // In a real implementation, we would stop the stream
+            // For now, just hide the feed
+            document.getElementById('camera-feed').style.display = 'none';
+        }
+        
+        function switchCamera() {
+            alert('Switching camera... (This feature requires multiple camera support)');
+        }
+        
+        // Face capture
+        function captureFace() {
+            if (captureCount >= 3) {
+                alert('You have already captured 3 photos. Click "Complete Registration" to proceed.');
+                return;
+            }
+            
+            const captureButton = document.getElementById('captureButton');
+            const captureNumber = captureCount + 1;
+            
+            // Disable button during capture
+            captureButton.disabled = true;
+            captureButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Capturing...';
+            
+            // Simulate capture process
+            setTimeout(() => {
+                // Generate a fake image data URL (in real app, capture from camera)
+                const fakeImageData = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="%23${Math.floor(Math.random()*16777215).toString(16)}"/></svg>`;
+                
+                // Store captured image
+                capturedImages.push(fakeImageData);
+                
+                // Update preview
+                const previewId = `preview${captureNumber}`;
+                const captureItemId = `capture${captureNumber}`;
+                
+                document.getElementById(previewId).src = fakeImageData;
+                document.getElementById(captureItemId).classList.add('active');
+                
+                // Show capture preview section
+                document.getElementById('capturePreview').style.display = 'block';
+                
+                // Update capture count
+                captureCount++;
+                
+                // Update button text
+                captureButton.innerHTML = `<i class="fas fa-camera"></i> Capture Photo ${captureCount + 1}/3`;
+                
+                // Re-enable button if not all captured
+                if (captureCount < 3) {
+                    captureButton.disabled = false;
+                } else {
+                    captureButton.innerHTML = '<i class="fas fa-check"></i> All Photos Captured';
+                    // Enable complete button
+                    document.getElementById('completeCaptureButton').disabled = false;
+                }
+                
+            }, 1000); // Simulate capture delay
+        }
+        
+        function retakeAll() {
+            if (confirm('Are you sure you want to retake all photos?')) {
+                // Reset capture count
+                captureCount = 0;
+                capturedImages = [];
+                
+                // Reset previews
+                for (let i = 1; i <= 3; i++) {
+                    document.getElementById(`preview${i}`).src = '';
+                    document.getElementById(`capture${i}`).classList.remove('active');
+                }
+                
+                // Hide capture preview
+                document.getElementById('capturePreview').style.display = 'none';
+                
+                // Reset capture button
+                const captureButton = document.getElementById('captureButton');
+                captureButton.innerHTML = '<i class="fas fa-camera"></i> Capture Photo 1/3';
+                captureButton.disabled = false;
+                
+                // Disable complete button
+                document.getElementById('completeCaptureButton').disabled = true;
+            }
+        }
+        
+        // Complete face capture
+        function completeFaceCapture() {
+            if (captureCount < 3) {
+                alert('Please capture all 3 photos before proceeding.');
+                return;
+            }
+            
+            const button = document.getElementById('completeCaptureButton');
+            const spinner = document.getElementById('processingSpinner');
+            
+            // Show loading
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            spinner.style.display = 'block';
+            
+            // Simulate face data processing
+            setTimeout(() => {
+                // Store face images in student data
+                studentData.faceImages = capturedImages;
+                
+                // Hide spinner
+                spinner.style.display = 'none';
+                
+                // Go to completion step
+                goToStep(4);
+                
+            }, 3000); // Simulate processing time
+        }
+        
+        // Complete registration
+        function completeRegistration() {
+            // Update registration success page with student data
+            document.getElementById('registeredAvatar').textContent = 
+                studentData.firstName[0] + studentData.lastName[0];
+            document.getElementById('registeredName').textContent = 
+                `${studentData.firstName} ${studentData.lastName}`;
+            document.getElementById('registeredSRCode').textContent = studentData.srCode;
+            document.getElementById('registeredSection').textContent = 
+                `${studentData.section} • ${studentData.department}`;
+            
+            // Submit form data (in real app, this would be AJAX)
+            document.getElementById('formSrCode').value = studentData.srCode;
+            document.getElementById('formFirstName').value = studentData.firstName;
+            document.getElementById('formLastName').value = studentData.lastName;
+            document.getElementById('formEmail').value = studentData.email || '';
+            document.getElementById('formPhone').value = studentData.phone || '';
+            document.getElementById('formDepartment').value = studentData.department;
+            document.getElementById('formSection').value = studentData.section;
+            document.getElementById('formYearLevel').value = studentData.yearLevel || '1';
+            document.getElementById('formFaceImages').value = JSON.stringify(studentData.faceImages);
+            
+            // Auto-submit form after 2 seconds
+            setTimeout(() => {
+                document.getElementById('registrationForm').submit();
+            }, 2000);
+        }
+        
+        // Post-registration actions
+        function goToDashboard() {
+            alert('Redirecting to your dashboard...');
+            window.location.href = "{{ url_for('student_portal') }}";
+        }
+        
+        function downloadQRCode() {
+            alert('Downloading your QR code...\n\nSave it to your phone for quick attendance.');
+        }
+        
+        function scanNow() {
+            alert('Opening face scanner...\n\nThis will test if your face recognition is working.');
+            // In real app: window.location.href = "/student/scan";
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Format SR Code input
+            const srCodeInput = document.getElementById('srCode');
+            srCodeInput.addEventListener('input', function(e) {
+                let value = e.target.value.toUpperCase();
+                
+                // Auto-add SR- prefix
+                if (!value.startsWith('SR-')) {
+                    if (value.startsWith('SR')) {
+                        value = 'SR-' + value.substring(2);
+                    } else if (value.length > 0) {
+                        value = 'SR-' + value;
+                    }
+                }
+                
+                // Remove any non-alphanumeric except dash
+                value = value.replace(/[^A-Z0-9-]/g, '');
+                
+                // Limit to SR- + 5 digits
+                if (value.length > 8) {
+                    value = value.substring(0, 8);
+                }
+                
+                e.target.value = value;
+            });
+            
+            // Enter key to submit SR Code
+            srCodeInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    validateSRCode();
+                }
+            });
+            
+            // Demo: Auto-fill for testing
+            srCodeInput.value = 'SR-12345';
+            document.getElementById('firstName').value = 'John';
+            document.getElementById('lastName').value = 'Doe';
+            document.getElementById('email').value = 'john.doe@sr.edu';
+            document.getElementById('phone').value = '+63 912 345 6789';
+            document.getElementById('department').value = 'Computer Science';
+            
+            // Trigger department change to populate sections
+            document.getElementById('department').dispatchEvent(new Event('change'));
+            
+            // Set default section after a delay
+            setTimeout(() => {
+                document.getElementById('section').value = 'CS-101';
+            }, 100);
+        });
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            stopCamera();
+        });
+    </script>
+</body>
+</html>

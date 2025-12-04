@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Take Attendance - Teacher Portal</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        .attendance-container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        
+        .attendance-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .section-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .camera-container {
+            width: 100%;
+            max-width: 640px;
+            margin: 20px auto;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #video {
+            width: 100%;
+            height: auto;
+        }
+        
+        .camera-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .camera-container:hover .camera-overlay {
+            opacity: 1;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            justify-content: center;
+        }
+        
+        .attendance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        .attendance-table th, .attendance-table td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        
+        .attendance-table th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        .present { background-color: #d4edda; }
+        .absent { background-color: #f8d7da; }
+        .late { background-color: #fff3cd; }
+        
+        .status-badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .badge-present { background-color: #28a745; color: white; }
+        .badge-late { background-color: #ffc107; color: black; }
+        .badge-absent { background-color: #dc3545; color: white; }
+        
+        .realtime-updates {
+            background: #e7f3fe;
+            border-left: 6px solid #2196F3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="navbar">
+            <h1>📊 Take Attendance</h1>
+            <div class="nav-links">
+                <a href="{{ url_for('teacher_dashboard') }}" class="btn btn-secondary">← Back to Dashboard</a>
+                <a href="{{ url_for('view_attendance', section_id=section.id) }}" class="btn btn-info">View Records</a>
+                <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+            </div>
+        </nav>
+
+        <div class="attendance-container">
+            <div class="attendance-header">
+                <h2>{{ section.section_name }} - Attendance</h2>
+                <div class="current-time">
+                    <strong>Time:</strong> <span id="current-time">Loading...</span>
+                </div>
+            </div>
+            
+            <div class="section-info">
+                <p><strong>Subject:</strong> {{ section.subject_name }}</p>
+                <p><strong>Schedule:</strong> {{ section.schedule }}</p>
+                <p><strong>Date:</strong> <span id="current-date">{{ current_date }}</span></p>
+                <p><strong>Total Students:</strong> {{ students|length }}</p>
+                <p><strong>Present:</strong> <span id="present-count">{{ present_count }}</span> | 
+                   <strong>Absent:</strong> <span id="absent-count">{{ absent_count }}</span> | 
+                   <strong>Late:</strong> <span id="late-count">{{ late_count }}</span></p>
+            </div>
+            
+            <div class="realtime-updates">
+                <h4>🎯 Real-time Attendance Updates</h4>
+                <p>Scan students' faces below. System will automatically mark attendance.</p>
+            </div>
+            
+            <div class="camera-container">
+                <video id="video" width="640" height="480" autoplay></video>
+                <div class="camera-overlay">
+                    <h3>Face Recognition Active</h3>
+                    <p>Position face in the frame</p>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <button id="start-camera" class="btn btn-success">Start Camera</button>
+                <button id="stop-camera" class="btn btn-warning">Stop Camera</button>
+                <button id="manual-mark" class="btn btn-primary">Manual Mark</button>
+                <button id="end-session" class="btn btn-danger">End Session</button>
+            </div>
+            
+            <div id="scan-result" style="display: none;">
+                <h3>Scan Result:</h3>
+                <div id="result-content"></div>
+            </div>
+            
+            <h3>Attendance Summary</h3>
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>SR Code</th>
+                        <th>Time In</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="attendance-body">
+                    {% for student in students %}
+                    <tr id="row-{{ student.id }}" class="{{ attendance[student.id].status if student.id in attendance else 'absent' }}">
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.sr_code }}</td>
+                        <td id="time-{{ student.id }}">
+                            {% if student.id in attendance %}
+                                {{ attendance[student.id].time_in }}
+                            {% else %}
+                                --
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if student.id in attendance %}
+                                <span class="status-badge badge-{{ attendance[student.id].status }}">
+                                    {{ attendance[student.id].status|upper }}
+                                </span>
+                            {% else %}
+                                <span class="status-badge badge-absent">ABSENT</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <button onclick="manualMark('{{ student.sr_code }}')" class="btn btn-sm btn-primary">Mark</button>
+                            <button onclick="markLate('{{ student.sr_code }}')" class="btn btn-sm btn-warning">Late</button>
+                            <button onclick="markAbsent('{{ student.sr_code }}')" class="btn btn-sm btn-danger">Absent</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Current time updater
+        function updateCurrentTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            const dateString = now.toLocaleDateString();
+            
+            document.getElementById('current-time').textContent = timeString;
+            document.getElementById('current-date').textContent = dateString;
+        }
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        // Camera setup
+        const video = document.getElementById('video');
+        let stream = null;
+        
+        document.getElementById('start-camera').onclick = async () => {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                video.srcObject = stream;
+                document.getElementById('start-camera').disabled = true;
+                document.getElementById('stop-camera').disabled = false;
+                
+                // Start face detection interval
+                startFaceDetection();
+            } catch (err) {
+                alert('Error accessing camera: ' + err.message);
+            }
+        };
+        
+        document.getElementById('stop-camera').onclick = () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                video.srcObject = null;
+                document.getElementById('start-camera').disabled = false;
+                document.getElementById('stop-camera').disabled = true;
+            }
+        };
+        
+        // Face detection
+        let detectionInterval = null;
+        
+        function startFaceDetection() {
+            detectionInterval = setInterval(captureAndDetect, 5000); // Every 5 seconds
+        }
+        
+        function stopFaceDetection() {
+            if (detectionInterval) {
+                clearInterval(detectionInterval);
+                detectionInterval = null;
+            }
+        }
+        
+        async function captureAndDetect() {
+            if (!stream) return;
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            const imageData = canvas.toDataURL('image/jpeg', 0.8);
+            
+            try {
+                const response = await fetch('/detect_face_attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: imageData,
+                        section_id: '{{ section.id }}'
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success && result.student) {
+                    showScanResult(result.student, result.status);
+                    updateAttendanceTable(result.student);
+                }
+            } catch (error) {
+                console.error('Detection error:', error);
+            }
+        }
+        
+        function showScanResult(student, status) {
+            const resultDiv = document.getElementById('scan-result');
+            const contentDiv = document.getElementById('result-content');
+            
+            contentDiv.innerHTML = `
+                <div class="alert alert-success">
+                    <h4>✅ Attendance Marked!</h4>
+                    <p><strong>Name:</strong> ${student.name}</p>
+                    <p><strong>SR Code:</strong> ${student.sr_code}</p>
+                    <p><strong>Status:</strong> <span class="badge-${status}">${status.toUpperCase()}</span></p>
+                    <p><strong>Time:</strong> ${new Date().toLocaleTimeString()}</p>
+                </div>
+            `;
+            
+            resultDiv.style.display = 'block';
+            
+            // Hide after 5 seconds
+            setTimeout(() => {
+                resultDiv.style.display = 'none';
+            }, 5000);
+        }
+        
+        function updateAttendanceTable(student) {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString();
+            
+            // Update the table row
+            const row = document.getElementById(`row-${student.id}`);
+            const timeCell = document.getElementById(`time-${student.id}`);
+            
+            if (row && timeCell) {
+                row.className = 'present';
+                timeCell.textContent = timeString;
+                
+                // Update status badge
+                const statusCell = row.cells[3];
+                statusCell.innerHTML = '<span class="status-badge badge-present">PRESENT</span>';
+                
+                // Update counts
+                updateAttendanceCounts();
+            }
+        }
+        
+        function updateAttendanceCounts() {
+            // Count present, absent, late
+            const rows = document.querySelectorAll('.attendance-table tbody tr');
+            let present = 0, absent = 0, late = 0;
+            
+            rows.forEach(row => {
+                if (row.classList.contains('present')) present++;
+                if (row.classList.contains('absent')) absent++;
+                if (row.classList.contains('late')) late++;
+            });
+            
+            document.getElementById('present-count').textContent = present;
+            document.getElementById('absent-count').textContent = absent;
+            document.getElementById('late-count').textContent = late;
+        }
+        
+        // Manual attendance functions
+        function manualMark(srCode) {
+            markAttendance(srCode, 'present');
+        }
+        
+        function markLate(srCode) {
+            markAttendance(srCode, 'late');
+        }
+        
+        function markAbsent(srCode) {
+            markAttendance(srCode, 'absent');
+        }
+        
+        async function markAttendance(srCode, status) {
+            try {
+                const response = await fetch('/mark_attendance', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        sr_code: srCode,
+                        section_id: '{{ section.id }}',
+                        status: status,
+                        manual: true
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    alert(`Attendance marked as ${status.toUpperCase()} for ${srCode}`);
+                    location.reload(); // Refresh to update
+                }
+            } catch (error) {
+                console.error('Error marking attendance:', error);
+            }
+        }
+        
+        // End session
+        document.getElementById('end-session').onclick = async () => {
+            if (confirm('End this attendance session? This will finalize all records.')) {
+                try {
+                    const response = await fetch('/end_attendance_session', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            section_id: '{{ section.id }}'
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    if (result.success) {
+                        alert('Attendance session ended successfully!');
+                        window.location.href = '/teacher/dashboard';
+                    }
+                } catch (error) {
+                    console.error('Error ending session:', error);
+                }
+            }
+        };
+        
+        // Auto-stop camera when leaving page
+        window.addEventListener('beforeunload', () => {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+            }
+            stopFaceDetection();
+        });
+        
+        // Auto-logout after 30 minutes of inactivity
+        let inactivityTimer;
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                if (confirm('You have been inactive for 30 minutes. Logout?')) {
+                    window.location.href = '/logout';
+                }
+            }, 30 * 60 * 1000); // 30 minutes
+        }
+        
+        // Reset timer on user activity
+        ['mousedown', 'mousemove', 'keypress', 'touchstart'].forEach(event => {
+            document.addEventListener(event, resetInactivityTimer);
+        });
+        
+        resetInactivityTimer();
+    </script>
+</body>
+</html>

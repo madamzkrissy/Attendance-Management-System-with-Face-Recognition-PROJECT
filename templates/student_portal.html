@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal - Attendance System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .header-info h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        
+        .header-info p {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .logout-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .logout-btn:hover {
+            background: #dc2626;
+        }
+        
+        .status-card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .status-card h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .status-present {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        
+        .status-late {
+            background: #fed7aa;
+            color: #92400e;
+        }
+        
+        .status-absent {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        
+        .status-unmarked {
+            background: #f3f4f6;
+            color: #374151;
+        }
+        
+        .time-info {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        .time-info p {
+            color: #666;
+            margin: 5px 0;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+        
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+        
+        .card h3 {
+            color: #333;
+            margin: 10px 0;
+        }
+        
+        .card p {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        
+        .card-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .card-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .info-box {
+            background: #f0f4ff;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        
+        .info-box h3 {
+            color: #333;
+            margin-top: 0;
+        }
+        
+        .info-box ul {
+            list-style: none;
+            color: #666;
+            line-height: 1.8;
+        }
+        
+        .info-box li {
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+        
+        .info-box li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            margin-top: 40px;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .header-info {
+                margin-bottom: 15px;
+            }
+            
+            .logout-btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="header-info">
+                <h1>Welcome, {{ student.name }}! 👋</h1>
+                <p><strong>SR Code:</strong> {{ student.sr_code }}</p>
+                {% if student.department %}
+                <p><strong>Department:</strong> {{ student.department }}</p>
+                {% endif %}
+            </div>
+            <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
+        </div>
+        
+        <!-- Today's Attendance Status -->
+        <div class="status-card">
+            <h2>📅 Today's Attendance Status</h2>
+            {% if attendance %}
+                {% if attendance.status == 'present' %}
+                    <span class="status-badge status-present">✓ PRESENT</span>
+                {% elif attendance.status == 'late' %}
+                    <span class="status-badge status-late">⚠ LATE</span>
+                {% elif attendance.status == 'absent' %}
+                    <span class="status-badge status-absent">✗ ABSENT</span>
+                {% endif %}
+                
+                {% if attendance.time_in %}
+                <div class="time-info">
+                    <p><strong>Check-in Time:</strong> {{ attendance.time_in.strftime('%I:%M %p') }}</p>
+                    {% if attendance.time_out %}
+                        <p><strong>Check-out Time:</strong> {{ attendance.time_out.strftime('%I:%M %p') }}</p>
+                    {% endif %}
+                    <p><strong>Marked by:</strong> {{ attendance.marked_by|title }}</p>
+                </div>
+                {% endif %}
+            {% else %}
+                <span class="status-badge status-unmarked">○ NOT MARKED</span>
+                <p style="color: #666; margin-top: 10px;">Your attendance has not been recorded yet. Please scan your face or contact your teacher.</p>
+            {% endif %}
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="grid">
+            <!-- View Profile -->
+            <div class="card">
+                <div class="card-icon">👤</div>
+                <h3>View Profile</h3>
+                <p>Check your complete profile and attendance history</p>
+                <a href="{{ url_for('student_profile') }}" class="card-btn">Go to Profile</a>
+            </div>
+            
+            <!-- Scan Face -->
+            <div class="card">
+                <div class="card-icon">📷</div>
+                <h3>Scan Face</h3>
+                <p>Record your attendance using face recognition</p>
+                <a href="{{ url_for('student_scan') }}" class="card-btn">Scan Now</a>
+            </div>
+            
+            <!-- Attendance History -->
+            <div class="card">
+                <div class="card-icon">📊</div>
+                <h3>Attendance History</h3>
+                <p>View your detailed attendance records</p>
+                <a href="{{ url_for('student_profile') }}" class="card-btn">View History</a>
+            </div>
+        </div>
+        
+        <!-- Important Information -->
+        <div class="info-box">
+            <h3>📌 Important Information</h3>
+            <ul>
+                <li>Mark your attendance before class starts</li>
+                <li>Attendance marked after 9:00 AM will be marked as LATE</li>
+                <li>Ensure good lighting for face recognition</li>
+                <li>Your profile can be updated from the Profile page</li>
+            </ul>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Attendance Management System • © 2025</p>
+            <p style="font-size: 0.9em; margin-top: 10px;">For support, contact your administrator</p>
+        </div>
+    </div>
+</body>
+</html>

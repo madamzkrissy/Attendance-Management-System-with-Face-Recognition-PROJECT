@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Set Schedule - {{ section_code }} - Face Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #27ae60;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background-color: #f5f7fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .schedule-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            border: none;
+            margin-bottom: 2rem;
+        }
+        
+        .day-schedule {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--primary-color);
+            transition: all 0.3s;
+        }
+        
+        .day-schedule:hover {
+            background: #e3f2fd;
+            transform: translateX(5px);
+        }
+        
+        .day-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .day-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        .time-slot {
+            background: white;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s;
+        }
+        
+        .time-slot:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+        
+        .add-slot-btn {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px dashed #ced4da;
+            border-radius: 8px;
+            background: transparent;
+            color: #6c757d;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .add-slot-btn:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+            background: rgba(52, 152, 219, 0.05);
+        }
+        
+        .schedule-preview {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .time-input-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .time-input {
+            flex: 1;
+        }
+        
+        .day-toggle {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .day-toggle input {
+            display: none;
+        }
+        
+        .day-toggle .toggle-slider {
+            width: 50px;
+            height: 26px;
+            background: #e0e0e0;
+            border-radius: 13px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .day-toggle .toggle-slider::before {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 2px;
+            left: 2px;
+            transition: all 0.3s;
+        }
+        
+        .day-toggle input:checked + .toggle-slider {
+            background: var(--success-color);
+        }
+        
+        .day-toggle input:checked + .toggle-slider::before {
+            transform: translateX(24px);
+        }
+        
+        .slot-actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .empty-schedule {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-schedule-icon {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+        
+        .schedule-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .summary-item {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+        }
+        
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .summary-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            .schedule-card {
+                box-shadow: none;
+                border: 1px solid #dee2e6;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('teacher_dashboard') }}">
+                <i class="fas fa-chalkboard-teacher"></i> Teacher Portal
+            </a>
+            <div class="navbar-text text-white">
+                Setting Schedule for: <strong>{{ section_code }}</strong>
+            </div>
+            <div class="d-flex">
+                <a href="{{ url_for('teacher_sections') }}" class="btn btn-outline-light btn-sm me-2">
+                    <i class="fas fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="schedule-card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2><i class="fas fa-calendar-alt"></i> Set Class Schedule</h2>
+                            <p class="text-muted mb-0">Define the weekly schedule for {{ section_code }}</p>
+                        </div>
+                        <div class="no-print">
+                            <button class="btn btn-primary" onclick="printSchedule()">
+                                <i class="fas fa-print"></i> Print Schedule
+                            </button>
+                        </div>
+                    </div>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" action="{{ url_for('section_schedule', section_code=section_code) }}" id="scheduleForm">
+                        <!-- Monday Schedule -->
+                        <div class="day-schedule">
+                            <div class="day-header">
+                                <div class="day-toggle">
+                                    <input type="checkbox" id="monday_toggle" name="monday_has_class" checked>
+                                    <label for="monday_toggle" class="d-flex align-items-center gap-2">
+                                        <span class="toggle-slider"></span>
+                                        <span class="day-title">
+                                            <i class="fas fa-calendar-day text-primary"></i> Monday
+                                        </span>
+                                    </label>
+                                </div>
+                                <span class="badge bg-primary">Full Day</span>
+                            </div>
+                            
+                            <div id="monday_slots">
+                                <!-- Default time slot for Monday -->
+                                <div class="time-slot">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <label class="form-label">Start Time</label>
+                                            <input type="time" class="form-control" name="monday_start_time[]" value="08:00" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <label class="form-label">End Time</label>
+                                            <input type="time" class="form-control" name="monday_end_time[]" value="10:00" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Subject</label>
+                                            <input type="text" class="form-control" name="monday_subject[]" placeholder="e.g., Introduction to Programming">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <label class="form-label">Room</label>
+                                            <input type="text" class="form-control" name="monday_room[]" placeholder="Room">
+                                        </div>
+                                    </div>
+                                    <div class="slot-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeSlot(this)">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="add-slot-btn" onclick="addTimeSlot('monday')">
+                                <i class="fas fa-plus-circle"></i> Add Another Time Slot
+                            </button>
+                        </div>
+                        
+                        <!-- Tuesday Schedule -->
+                        <div class="day-schedule">
+                            <div class="day-header">
+                                <div class="day-toggle">
+                                    <input type="checkbox" id="tuesday_toggle" name="tuesday_has_class" checked>
+                                    <label for="tuesday_toggle" class="d-flex align-items-center gap-2">
+                                        <span class="toggle-slider"></span>
+                                        <span class="day-title">
+                                            <i class="fas fa-calendar-day text-success"></i> Tuesday
+                                        </span>
+                                    </label>
+                                </div>
+                                <span class="badge bg-success">Full Day</span>
+                            </div>
+                            
+                            <div id="tuesday_slots">
+                                <div class="time-slot">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="tuesday_start_time[]" value="10:00" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="tuesday_end_time[]" value="12:00" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control" name="tuesday_subject[]" placeholder="e.g., Data Structures">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" class="form-control" name="tuesday_room[]" placeholder="Room">
+                                        </div>
+                                    </div>
+                                    <div class="slot-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeSlot(this)">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="add-slot-btn" onclick="addTimeSlot('tuesday')">
+                                <i class="fas fa-plus-circle"></i> Add Another Time Slot
+                            </button>
+                        </div>
+                        
+                        <!-- Wednesday Schedule -->
+                        <div class="day-schedule">
+                            <div class="day-header">
+                                <div class="day-toggle">
+                                    <input type="checkbox" id="wednesday_toggle" name="wednesday_has_class" checked>
+                                    <label for="wednesday_toggle" class="d-flex align-items-center gap-2">
+                                        <span class="toggle-slider"></span>
+                                        <span class="day-title">
+                                            <i class="fas fa-calendar-day text-warning"></i> Wednesday
+                                        </span>
+                                    </label>
+                                </div>
+                                <span class="badge bg-warning">Full Day</span>
+                            </div>
+                            
+                            <div id="wednesday_slots">
+                                <div class="time-slot">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="wednesday_start_time[]" value="13:00" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="wednesday_end_time[]" value="15:00" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control" name="wednesday_subject[]" placeholder="e.g., Web Development">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" class="form-control" name="wednesday_room[]" placeholder="Room">
+                                        </div>
+                                    </div>
+                                    <div class="slot-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeSlot(this)">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="add-slot-btn" onclick="addTimeSlot('wednesday')">
+                                <i class="fas fa-plus-circle"></i> Add Another Time Slot
+                            </button>
+                        </div>
+                        
+                        <!-- Thursday Schedule -->
+                        <div class="day-schedule">
+                            <div class="day-header">
+                                <div class="day-toggle">
+                                    <input type="checkbox" id="thursday_toggle" name="thursday_has_class" checked>
+                                    <label for="thursday_toggle" class="d-flex align-items-center gap-2">
+                                        <span class="toggle-slider"></span>
+                                        <span class="day-title">
+                                            <i class="fas fa-calendar-day text-info"></i> Thursday
+                                        </span>
+                                    </label>
+                                </div>
+                                <span class="badge bg-info">Full Day</span>
+                            </div>
+                            
+                            <div id="thursday_slots">
+                                <div class="time-slot">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="thursday_start_time[]" value="08:00" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="thursday_end_time[]" value="10:00" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control" name="thursday_subject[]" placeholder="e.g., Database Systems">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" class="form-control" name="thursday_room[]" placeholder="Room">
+                                        </div>
+                                    </div>
+                                    <div class="slot-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeSlot(this)">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="add-slot-btn" onclick="addTimeSlot('thursday')">
+                                <i class="fas fa-plus-circle"></i> Add Another Time Slot
+                            </button>
+                        </div>
+                        
+                        <!-- Friday Schedule -->
+                        <div class="day-schedule">
+                            <div class="day-header">
+                                <div class="day-toggle">
+                                    <input type="checkbox" id="friday_toggle" name="friday_has_class" checked>
+                                    <label for="friday_toggle" class="d-flex align-items-center gap-2">
+                                        <span class="toggle-slider"></span>
+                                        <span class="day-title">
+                                            <i class="fas fa-calendar-day text-danger"></i> Friday
+                                        </span>
+                                    </label>
+                                </div>
+                                <span class="badge bg-danger">Full Day</span>
+                            </div>
+                            
+                            <div id="friday_slots">
+                                <div class="time-slot">
+                                    <div class="row g-3">
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="friday_start_time[]" value="14:00" required>
+                                        </div>
+                                        <div class="col-md-3">
+                                            <input type="time" class="form-control" name="friday_end_time[]" value="16:00" required>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <input type="text" class="form-control" name="friday_subject[]" placeholder="e.g., Software Engineering">
+                                        </div>
+                                        <div class="col-md-2">
+                                            <input type="text" class="form-control" name="friday_room[]" placeholder="Room">
+                                        </div>
+                                    </div>
+                                    <div class="slot-actions">
+                                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeSlot(this)">
+                                            <i class="fas fa-trash"></i> Remove
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <button type="button" class="add-slot-btn" onclick="addTimeSlot('friday')">
+                                <i class="fas fa-plus-circle"></i> Add Another Time Slot
+                            </button>
+                        </div>
+                        
+                        <!-- Saturday Schedule -->
+                        <div class="day-schedule">
+                            <div class="day-header">
+                                <div class="day-toggle">
+                                    <input type="checkbox" id="saturday_toggle" name="saturday_has_class">
+                                    <label for="saturday_toggle" class="d-flex align-items-center gap-2">
+                                        <span class="toggle-slider"></span>
+                                        <span class="day-title">
+                                            <i class="fas fa-calendar-day text-secondary"></i> Saturday
+                                        </span>
+                                    </label>
+                                </div>
+                                <span class="badge bg-secondary">No Class</span>
+                            </div>
+                            
+                            <div id="saturday_slots">
+                                <div class="empty-schedule" id="saturday_empty">
+                                    <div class="empty-schedule-icon">
+                                        <i class="fas fa-coffee"></i>
+                                    </div>
+                                    <p>No classes scheduled for Saturday</p>
+                                    <button type="button" class="btn btn-outline-primary" onclick="enableSaturday()">
+                                        <i class="fas fa-plus"></i> Add Saturday Classes
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Form Actions -->
+                        <div class="d-flex justify-content-between mt-4 no-print">
+                            <a href="{{ url_for('teacher_sections') }}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-warning me-2" onclick="resetToDefaults()">
+                                    <i class="fas fa-redo"></i> Reset to Defaults
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save"></i> Save Schedule
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Preview Sidebar -->
+            <div class="col-lg-4">
+                <div class="schedule-card p-4">
+                    <h4><i class="fas fa-eye"></i> Schedule Preview</h4>
+                    <p class="text-muted">Preview of your weekly schedule</p>
+                    
+                    <div class="schedule-preview">
+                        <h5 class="mb-3"><i class="fas fa-calendar-week"></i> Weekly Overview</h5>
+                        
+                        <div class="schedule-summary">
+                            <div class="summary-item">
+                                <span class="summary-value" id="totalHours">20</span>
+                                <span class="summary-label">Total Hours</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-value" id="classDays">5</span>
+                                <span class="summary-label">Class Days</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-value" id="totalSlots">5</span>
+                                <span class="summary-label">Time Slots</span>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6><i class="fas fa-clock"></i> Daily Schedule</h6>
+                            <div class="mt-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Monday</span>
+                                    <span class="badge bg-light text-dark">08:00 - 10:00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tuesday</span>
+                                    <span class="badge bg-light text-dark">10:00 - 12:00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Wednesday</span>
+                                    <span class="badge bg-light text-dark">13:00 - 15:00</span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Thursday</span>
+                                    <span class="badge bg-light text-dark">08:00 - 10:00</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Friday</span>
+                                    <span class="badge bg-light text-dark">14:00 - 16:00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6><i class="fas fa-lightbulb"></i> Tips</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check-circle text-success"></i> Set realistic time slots</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success"></i> Include break times</li>
+                            <li class="mb-2"><i class="fas fa-check-circle text-success"></i> Consider student commute</li>
+                            <li><i class="fas fa-check-circle text-success"></i> Save after each major change</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="alert alert-info mt-3">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> Students will only be able to check-in during scheduled class times.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Time slot counter
+        let slotCounter = {
+            monday: 1,
+            tuesday: 1,
+            wednesday: 1,
+            thursday: 1,
+            friday: 1,
+            saturday: 0
+        };
+        
+        // Add time slot to a specific day
+        function addTimeSlot(day) {
+            const container = document.getElementById(`${day}_slots`);
+            const emptyMessage = document.getElementById(`${day}_empty`);
+            
+            // Remove empty message if present
+            if (emptyMessage) {
+                emptyMessage.remove();
+            }
+            
+            // Create new time slot
+            const slotId = `${day}_slot_${slotCounter[day]++}`;
+            const newSlot = document.createElement('div');
+            newSlot.className = 'time-slot';
+            newSlot.innerHTML = `
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="time" class="form-control" name="${day}_start_time[]" value="09:00" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">End Time</label>
+                        <input type="time" class="form-control" name="${day}_end_time[]" value="11:00" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Subject</label>
+                        <input type="text" class="form-control" name="${day}_subject[]" placeholder="Enter subject name">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Room</label>
+                        <input type="text" class="form-control" name="${day}_room[]" placeholder="Room">
+                    </div>
+                </div>
+                <div class="slot-actions">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeSlot(this)">
+                        <i class="fas fa-trash"></i> Remove
+                    </button>
+                </div>
+            `;
+            
+            container.appendChild(newSlot);
+            updatePreview();
+        }
+        
+        // Remove time slot
+        function removeTimeSlot(button) {
+            const timeSlot = button.closest('.time-slot');
+            const dayContainer = timeSlot.parentElement;
+            
+            timeSlot.remove();
+            
+            // If no slots left, show empty message for Saturday
+            if (dayContainer.id === 'saturday_slots' && dayContainer.children.length === 0) {
+                dayContainer.innerHTML = `
+                    <div class="empty-schedule" id="saturday_empty">
+                        <div class="empty-schedule-icon">
+                            <i class="fas fa-coffee"></i>
+                        </div>
+                        <p>No classes scheduled for Saturday</p>
+                        <button type="button" class="btn btn-outline-primary" onclick="enableSaturday()">
+                            <i class="fas fa-plus"></i> Add Saturday Classes
+                        </button>
+                    </div>
+                `;
+                // Uncheck Saturday toggle
+                document.getElementById('saturday_toggle').checked = false;
+            }
+            
+            updatePreview();
+        }
+        
+        // Enable Saturday schedule
+        function enableSaturday() {
+            const toggle = document.getElementById('saturday_toggle');
+            const container = document.getElementById('saturday_slots');
+            
+            toggle.checked = true;
+            container.innerHTML = '';
+            addTimeSlot('saturday');
+            
+            // Update badge
+            const badge = container.closest('.day-schedule').querySelector('.badge');
+            badge.textContent = 'With Class';
+            badge.className = 'badge bg-primary';
+        }
+        
+        // Update schedule preview
+        function updatePreview() {
+            // Calculate total hours
+            let totalHours = 0;
+            let classDays = 0;
+            let totalSlots = 0;
+            
+            // Count class days and slots
+            const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+            days.forEach(day => {
+                const toggle = document.getElementById(`${day}_toggle`);
+                const slots = document.querySelectorAll(`#${day}_slots .time-slot`);
+                
+                if (toggle.checked && slots.length > 0) {
+                    classDays++;
+                    totalSlots += slots.length;
+                    
+                    // Calculate hours for each slot (simplified)
+                    slots.forEach(slot => {
+                        const startInput = slot.querySelector('input[name$="start_time[]"]');
+                        const endInput = slot.querySelector('input[name$="end_time[]"]');
+                        
+                        if (startInput && endInput && startInput.value && endInput.value) {
+                            const start = parseTime(startInput.value);
+                            const end = parseTime(endInput.value);
+                            const hours = (end - start) / (1000 * 60 * 60);
+                            if (hours > 0) totalHours += hours;
+                        }
+                    });
+                }
+            });
+            
+            // Update preview
+            document.getElementById('totalHours').textContent = Math.round(totalHours);
+            document.getElementById('classDays').textContent = classDays;
+            document.getElementById('totalSlots').textContent = totalSlots;
+        }
+        
+        // Parse time string to Date object
+        function parseTime(timeString) {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            const date = new Date();
+            date.setHours(hours, minutes, 0, 0);
+            return date;
+        }
+        
+        // Reset to default schedule
+        function resetToDefaults() {
+            if (confirm('Are you sure you want to reset to default schedule? This will remove all your changes.')) {
+                // Reset all days
+                const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                
+                days.forEach(day => {
+                    const container = document.getElementById(`${day}_slots`);
+                    const toggle = document.getElementById(`${day}_toggle`);
+                    
+                    // Clear container
+                    container.innerHTML = '';
+                    
+                    // Set default state
+                    if (day !== 'saturday') {
+                        toggle.checked = true;
+                        addTimeSlot(day);
+                    } else {
+                        toggle.checked = false;
+                        container.innerHTML = `
+                            <div class="empty-schedule" id="saturday_empty">
+                                <div class="empty-schedule-icon">
+                                    <i class="fas fa-coffee"></i>
+                                </div>
+                                <p>No classes scheduled for Saturday</p>
+                                <button type="button" class="btn btn-outline-primary" onclick="enableSaturday()">
+                                    <i class="fas fa-plus"></i> Add Saturday Classes
+                                </button>
+                            </div>
+                        `;
+                    }
+                });
+                
+                // Update preview
+                updatePreview();
+            }
+        }
+        
+        // Print schedule
+        function printSchedule() {
+            window.print();
+        }
+        
+        // Initialize preview on load
+        document.addEventListener('DOMContentLoaded', function() {
+            updatePreview();
+            
+            // Add event listeners to time inputs
+            document.querySelectorAll('input[type="time"]').forEach(input => {
+                input.addEventListener('change', updatePreview);
+            });
+            
+            // Add event listeners to toggle switches
+            document.querySelectorAll('.day-toggle input').forEach(toggle => {
+                toggle.addEventListener('change', function() {
+                    const day = this.id.replace('_toggle', '');
+                    const container = document.getElementById(`${day}_slots`);
+                    const badge = container.closest('.day-schedule').querySelector('.badge');
+                    
+                    if (this.checked) {
+                        if (day === 'saturday') {
+                            enableSaturday();
+                        } else if (container.children.length === 0) {
+                            addTimeSlot(day);
+                        }
+                        badge.textContent = 'With Class';
+                        badge.className = 'badge bg-primary';
+                    } else {
+                        container.innerHTML = `
+                            <div class="empty-schedule" id="${day}_empty">
+                                <div class="empty-schedule-icon">
+                                    <i class="fas fa-coffee"></i>
+                                </div>
+                                <p>No classes scheduled for ${day.charAt(0).toUpperCase() + day.slice(1)}</p>
+                                <button type="button" class="btn btn-outline-primary" onclick="document.getElementById('${day}_toggle').checked = true; addTimeSlot('${day}')">
+                                    <i class="fas fa-plus"></i> Add Classes
+                                </button>
+                            </div>
+                        `;
+                        badge.textContent = 'No Class';
+                        badge.className = 'badge bg-secondary';
+                    }
+                    updatePreview();
+                });
+            });
+            
+            // Form validation
+            document.getElementById('scheduleForm').addEventListener('submit', function(e) {
+                let isValid = true;
+                let errorMessage = '';
+                
+                // Check each day
+                const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                
+                days.forEach(day => {
+                    const toggle = document.getElementById(`${day}_toggle`);
+                    if (toggle.checked) {
+                        const slots = document.querySelectorAll(`#${day}_slots .time-slot`);
+                        if (slots.length === 0) {
+                            isValid = false;
+                            errorMessage = `Please add at least one time slot for ${day.charAt(0).toUpperCase() + day.slice(1)}`;
+                        }
+                        
+                        // Check time validity for each slot
+                        slots.forEach(slot => {
+                            const startInput = slot.querySelector('input[name$="start_time[]"]');
+                            const endInput = slot.querySelector('input[name$="end_time[]"]');
+                            
+                            if (startInput.value && endInput.value) {
+                                const start = parseTime(startInput.value);
+                                const end = parseTime(endInput.value);
+                                
+                                if (end <= start) {
+                                    isValid = false;
+                                    errorMessage = 'End time must be after start time';
+                                }
+                            }
+                        });
+                    }
+                });
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    alert(`Error: ${errorMessage}`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

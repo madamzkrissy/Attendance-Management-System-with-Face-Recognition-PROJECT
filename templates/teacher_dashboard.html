@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - Face Attendance</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .navbar-custom {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar {
+            background: white;
+            min-height: calc(100vh - 56px);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar .nav-link {
+            color: #555;
+            padding: 0.75rem 1rem;
+            border-left: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .sidebar .nav-link:hover {
+            background-color: #f8f9fa;
+            border-left-color: var(--secondary-color);
+            color: var(--secondary-color);
+        }
+        
+        .sidebar .nav-link.active {
+            background-color: #e3f2fd;
+            border-left-color: var(--secondary-color);
+            color: var(--secondary-color);
+            font-weight: 600;
+        }
+        
+        .stat-card {
+            border-radius: 10px;
+            border: none;
+            transition: transform 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+            transition: all 0.3s;
+            margin-bottom: 1rem;
+        }
+        
+        .section-card:hover {
+            border-color: var(--secondary-color);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.1);
+        }
+        
+        .attendance-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        
+        .welcome-banner {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('teacher_dashboard') }}">
+                <i class="fas fa-chalkboard-teacher"></i> Teacher Dashboard
+            </a>
+            <div class="navbar-text text-white">
+                Welcome, <strong>{{ teacher_name }}</strong>
+                <span class="mx-2">•</span>
+                <span id="current-time"></span>
+            </div>
+            <div class="d-flex">
+                <a href="{{ url_for('teacher_logout') }}" class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 sidebar p-0">
+                <div class="p-3">
+                    <h6 class="text-uppercase text-muted mb-3">Navigation</h6>
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="{{ url_for('teacher_dashboard') }}">
+                                <i class="fas fa-tachometer-alt"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('teacher_sections') }}">
+                                <i class="fas fa-users"></i> My Sections
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-calendar-check"></i> Take Attendance
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-chart-bar"></i> Reports
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <hr class="my-3">
+                    
+                    <h6 class="text-uppercase text-muted mb-3">Quick Actions</h6>
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('create_section') }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> New Section
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-print"></i> Print Reports
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content -->
+            <div class="col-md-10 p-4">
+                <!-- Welcome Banner -->
+                <div class="welcome-banner">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2>Welcome back, {{ teacher_name }}!</h2>
+                            <p class="mb-0">Manage your classes, track attendance, and monitor student progress</p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <div class="h1 mb-0" id="today-date"></div>
+                            <div class="h4" id="current-time-large"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="row mb-4">
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted text-uppercase">Total Sections</h6>
+                                        <h3 class="mb-0">{{ sections|length }}</h3>
+                                    </div>
+                                    <div class="stat-icon bg-primary text-white">
+                                        <i class="fas fa-users"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted text-uppercase">Total Students</h6>
+                                        <h3 class="mb-0">
+                                            {% set total_students = namespace(value=0) %}
+                                            {% for section in attendance_summary %}
+                                                {% set total_students.value = total_students.value + section.total_students %}
+                                            {% endfor %}
+                                            {{ total_students.value }}
+                                        </h3>
+                                    </div>
+                                    <div class="stat-icon bg-success text-white">
+                                        <i class="fas fa-user-graduate"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted text-uppercase">Present Today</h6>
+                                        <h3 class="mb-0">
+                                            {% set total_present = namespace(value=0) %}
+                                            {% for section in attendance_summary %}
+                                                {% set total_present.value = total_present.value + section.present_today %}
+                                            {% endfor %}
+                                            {{ total_present.value }}
+                                        </h3>
+                                    </div>
+                                    <div class="stat-icon bg-warning text-white">
+                                        <i class="fas fa-user-check"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="text-muted text-uppercase">Attendance Rate</h6>
+                                        <h3 class="mb-0">
+                                            {% if total_students.value > 0 %}
+                                                {{ ((total_present.value / total_students.value) * 100)|int }}%
+                                            {% else %}
+                                                0%
+                                            {% endif %}
+                                        </h3>
+                                    </div>
+                                    <div class="stat-icon bg-info text-white">
+                                        <i class="fas fa-chart-line"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Sections -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0"><i class="fas fa-users"></i> My Sections</h5>
+                                <a href="{{ url_for('teacher_sections') }}" class="btn btn-sm btn-outline-primary">
+                                    View All <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                            <div class="card-body">
+                                {% if sections %}
+                                    <div class="row">
+                                        {% for section in sections[:4] %}
+                                            <div class="col-md-3">
+                                                <div class="section-card p-3">
+                                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                                        <div>
+                                                            <h5 class="mb-1">{{ section[1] }}</h5>
+                                                            <p class="text-muted mb-1">{{ section[2] }}</p>
+                                                        </div>
+                                                        <span class="badge bg-primary">{{ section[8] or 0 }} students</span>
+                                                    </div>
+                                                    
+                                                    {% for summary in attendance_summary %}
+                                                        {% if summary.section_code == section[1] %}
+                                                            <div class="d-flex justify-content-between mb-2">
+                                                                <small>Present Today:</small>
+                                                                <strong>{{ summary.present_today }}/{{ summary.total_students }}</strong>
+                                                            </div>
+                                                            <div class="d-flex justify-content-between mb-3">
+                                                                <small>Late Today:</small>
+                                                                <strong class="text-warning">{{ summary.late_today }}</strong>
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    
+                                                    <div class="d-grid gap-1">
+                                                        <a href="{{ url_for('take_attendance', section_code=section[1]) }}" 
+                                                           class="btn btn-sm btn-success">
+                                                            <i class="fas fa-camera"></i> Take Attendance
+                                                        </a>
+                                                        <a href="{{ url_for('section_students', section_code=section[1]) }}" 
+                                                           class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-list"></i> View Students
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                    
+                                    {% if sections|length > 4 %}
+                                        <div class="text-center mt-3">
+                                            <a href="{{ url_for('teacher_sections') }}" class="btn btn-outline-secondary">
+                                                View {{ sections|length - 4 }} more sections
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="text-center py-5">
+                                        <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                                        <h5>No sections yet</h5>
+                                        <p class="text-muted">Create your first section to start managing attendance</p>
+                                        <a href="{{ url_for('create_section') }}" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i> Create Section
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Today's Schedule -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-calendar-day"></i> Today's Schedule</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-clock text-primary"></i>
+                                            <span class="ms-2">CS-101: Introduction to Programming</span>
+                                        </div>
+                                        <span class="badge bg-primary">08:00 - 10:00</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-clock text-primary"></i>
+                                            <span class="ms-2">IT-101: Web Development</span>
+                                        </div>
+                                        <span class="badge bg-primary">10:00 - 12:00</span>
+                                    </div>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <i class="fas fa-clock text-primary"></i>
+                                            <span class="ms-2">CS-102: Data Structures</span>
+                                        </div>
+                                        <span class="badge bg-primary">13:00 - 15:00</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0"><i class="fas fa-bell"></i> Notifications</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="list-group">
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1"><i class="fas fa-user-clock text-warning"></i> Late Students Today</h6>
+                                            <small>10 min ago</small>
+                                        </div>
+                                        <p class="mb-1">3 students were late for CS-101</p>
+                                    </div>
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1"><i class="fas fa-chart-line text-success"></i> Attendance Report Ready</h6>
+                                            <small>1 hour ago</small>
+                                        </div>
+                                        <p class="mb-1">Weekly report for CS-101 is available</p>
+                                    </div>
+                                    <div class="list-group-item">
+                                        <div class="d-flex w-100 justify-content-between">
+                                            <h6 class="mb-1"><i class="fas fa-user-plus text-info"></i> New Student Enrolled</h6>
+                                            <small>2 hours ago</small>
+                                        </div>
+                                        <p class="mb-1">SR-10006 enrolled in CS-101</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', {hour12: false});
+            const dateString = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('current-time').textContent = timeString;
+            document.getElementById('current-time-large').textContent = timeString;
+            document.getElementById('today-date').textContent = dateString;
+        }
+        
+        setInterval(updateTime, 1000);
+        updateTime();
+        
+        // Auto refresh attendance data every 30 seconds
+        setInterval(function() {
+            location.reload();
+        }, 30000);
+    </script>
+</body>
+</html>

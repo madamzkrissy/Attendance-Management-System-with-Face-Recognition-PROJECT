@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scan Face for Attendance - Face Attendance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .scan-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+        
+        .scan-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .scan-header {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .scan-body {
+            padding: 2rem;
+        }
+        
+        .scan-section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .scan-section.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .camera-main {
+            background: #000;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 1.5rem 0;
+            position: relative;
+            min-height: 400px;
+        }
+        
+        #camera-feed {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        
+        .face-guide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 280px;
+            height: 350px;
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            pointer-events: none;
+        }
+        
+        .face-detection-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+        
+        .face-box {
+            position: absolute;
+            border: 3px solid var(--success-color);
+            border-radius: 10px;
+            background: rgba(39, 174, 96, 0.1);
+            animation: pulseBox 2s infinite;
+        }
+        
+        @keyframes pulseBox {
+            0% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(39, 174, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
+        }
+        
+        .face-label {
+            position: absolute;
+            top: -30px;
+            left: 0;
+            background: var(--success-color);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .scan-controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin: 1.5rem 0;
+        }
+        
+        .btn-scan {
+            background: linear-gradient(45deg, var(--success-color), #2ecc71);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 3rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-scan:hover:not(:disabled) {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(39, 174, 96, 0.3);
+        }
+        
+        .btn-scan:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .loading-spinner {
+            text-align: center;
+            padding: 2rem;
+            display: none;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .scan-results {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin-top: 2rem;
+            display: none;
+            animation: slideUp 0.5s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .receipt-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin: 1.5rem 0;
+            border-top: 5px solid var(--success-color);
+        }
+        
+        .receipt-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .receipt-icon {
+            font-size: 4rem;
+            color: var(--success-color);
+            margin-bottom: 1rem;
+            animation: bounce 1s;
+        }
+        
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {transform: translateY(0);}
+            40% {transform: translateY(-20px);}
+            60% {transform: translateY(-10px);}
+        }
+        
+        .receipt-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .receipt-item {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .receipt-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        
+        .receipt-value {
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        .subject-list {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .subject-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem;
+            border-bottom: 1px solid rgba(52, 152, 219, 0.2);
+        }
+        
+        .subject-item:last-child {
+            border-bottom: none;
+        }
+        
+        .status-badge {
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        
+        .badge-on-time {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-late {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .auto-scan-notice {
+            background: #fff3cd;
+            border-radius: 10px;
+            padding: 1rem;
+            margin: 1.5rem 0;
+            border-left: 4px solid var(--warning-color);
+            text-align: center;
+        }
+        
+        .scan-timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--warning-color);
+            margin: 0 0.5rem;
+        }
+        
+        .student-info {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            display: none;
+        }
+        
+        .student-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+        
+        .qr-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        
+        .qr-display {
+            width: 200px;
+            height: 200px;
+            background: white;
+            border-radius: 10px;
+            margin: 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: var(--secondary-color);
+            border: 2px dashed #dee2e6;
+        }
+        
+        .manual-select {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+        }
+        
+        .select-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .scan-instructions {
+            background: #e3f2fd;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .instructions-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .instructions-list li {
+            padding: 0.5rem 0;
+            color: var(--secondary-color);
+        }
+        
+        .instructions-list i {
+            color: var(--primary-color);
+            margin-right: 0.75rem;
+        }
+        
+        .camera-feedback {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-weight: 600;
+            z-index: 10;
+        }
+        
+        .face-count {
+            background: rgba(0,0,0,0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        
+        .camera-status {
+            background: rgba(0,0,0,0.7);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        
+        .camera-status.active {
+            background: rgba(39, 174, 96, 0.7);
+        }
+        
+        @media (max-width: 768px) {
+            .scan-container {
+                padding: 1rem;
+            }
+            
+            .scan-body {
+                padding: 1.5rem;
+            }
+            
+            .camera-main {
+                min-height: 300px;
+            }
+            
+            .face-guide {
+                width: 200px;
+                height: 250px;
+            }
+            
+            .scan-controls {
+                flex-direction: column;
+            }
+            
+            .btn-scan {
+                width: 100%;
+            }
+            
+            .receipt-details {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="scan-container">
+        <div class="scan-card">
+            <!-- Header -->
+            <div class="scan-header">
+                <h1><i class="fas fa-camera"></i> Face Scan for Attendance</h1>
+                <p class="mb-0">Quick and easy attendance with facial recognition</p>
+            </div>
+            
+            <!-- Scan Body -->
+            <div class="scan-body">
+                <!-- Step 1: Camera View -->
+                <div class="scan-section active" id="scanSection">
+                    <h3 class="text-center mb-4">Position Your Face in the Frame</h3>
+                    <p class="text-center text-muted mb-4">
+                        Look directly at the camera and make sure your face is clearly visible
+                    </p>
+                    
+                    <!-- Camera Feed -->
+                    <div class="camera-main">
+                        <div class="camera-feedback">
+                            <div class="face-count">
+                                <i class="fas fa-user"></i> Faces: <span id="faceCount">0</span>
+                            </div>
+                            <div class="camera-status" id="cameraStatus">
+                                <i class="fas fa-circle"></i> Camera Active
+                            </div>
+                        </div>
+                        
+                        <img id="camera-feed" src="{{ url_for('video_feed') }}" alt="Camera Feed">
+                        <div class="face-guide"></div>
+                        
+                        <!-- Face Detection Overlay -->
+                        <div class="face-detection-overlay" id="faceOverlay">
+                            <!-- Face boxes will be drawn here by JavaScript -->
+                        </div>
+                    </div>
+                    
+                    <!-- Auto Scan Notice -->
+                    <div class="auto-scan-notice">
+                        <p class="mb-2">
+                            <i class="fas fa-robot"></i> 
+                            <strong>Auto-scan in:</strong> 
+                            <span class="scan-timer" id="autoScanTimer">5</span> seconds
+                        </p>
+                        <small class="text-muted">
+                            The system will automatically scan when a face is detected
+                        </small>
+                    </div>
+                    
+                    <!-- Manual Select (if multiple faces) -->
+                    <div class="manual-select" id="manualSelect" style="display: none;">
+                        <h6 class="mb-3"><i class="fas fa-users"></i> Multiple Faces Detected</h6>
+                        <p class="text-muted mb-3">Please select which student is taking attendance:</p>
+                        <div class="select-grid" id="faceSelection">
+                            <!-- Face options will be added here -->
+                        </div>
+                    </div>
+                    
+                    <!-- Scan Controls -->
+                    <div class="scan-controls">
+                        <button class="btn btn-outline-primary" onclick="switchCamera()">
+                            <i class="fas fa-sync-alt"></i> Switch Camera
+                        </button>
+                        <button class="btn-scan" id="scanButton" onclick="manualScan()">
+                            <i class="fas fa-camera"></i> Scan Face Now
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="stopCamera()">
+                            <i class="fas fa-stop"></i> Stop Camera
+                        </button>
+                    </div>
+                    
+                    <!-- Loading Spinner -->
+                    <div class="loading-spinner" id="scanningSpinner">
+                        <div class="spinner"></div>
+                        <h5>Scanning Face...</h5>
+                        <p class="text-muted">Please wait while we process your face</p>
+                    </div>
+                    
+                    <!-- Student Info (after recognition) -->
+                    <div class="student-info" id="studentInfo">
+                        <div class="student-avatar" id="studentAvatar">JD</div>
+                        <h4 class="text-center" id="studentName">John Doe</h4>
+                        <p class="text-center mb-2" id="studentSRCode">SR-12345</p>
+                        <div class="text-center">
+                            <span class="badge bg-light text-dark" id="studentSection">CS-101</span>
+                            <span class="badge bg-light text-dark mx-1" id="studentDepartment">Computer Science</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Scan Instructions -->
+                    <div class="scan-instructions">
+                        <h6><i class="fas fa-lightbulb"></i> Tips for best results:</h6>
+                        <ul class="instructions-list">
+                            <li><i class="fas fa-check-circle"></i> Face the camera directly</li>
+                            <li><i class="fas fa-check-circle"></i> Ensure good lighting on your face</li>
+                            <li><i class="fas fa-check-circle"></i> Remove sunglasses or hats</li>
+                            <li><i class="fas fa-check-circle"></i> Stand about 1 meter from camera</li>
+                            <li><i class="fas fa-check-circle"></i> Keep a neutral expression</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Scan Results -->
+                <div class="scan-section" id="resultsSection">
+                    <div class="scan-results" id="scanResults">
+                        <!-- Results will be loaded here -->
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <button class="btn btn-outline-secondary" onclick="goBackToScan()">
+                            <i class="fas fa-arrow-left"></i> Scan Again
+                        </button>
+                        <div>
+                            <button class="btn btn-outline-primary me-2" onclick="downloadReceipt()">
+                                <i class="fas fa-download"></i> Download Receipt
+                            </button>
+                            <button class="btn btn-success" onclick="goToDashboard()">
+                                <i class="fas fa-tachometer-alt"></i> Go to Dashboard
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- QR Code Section -->
+                <div class="qr-section">
+                    <h5><i class="fas fa-qrcode"></i> Quick Attendance QR Code</h5>
+                    <p class="text-muted">Prefer QR code? Use this for quick attendance at kiosks</p>
+                    
+                    <div class="qr-display">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <p class="mb-2"><small>Your SR Code: <strong id="qrSRCode">SR-12345</strong></small></p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="showQRModal()">
+                            <i class="fas fa-expand"></i> View Full QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="text-center mt-4">
+            <p class="text-muted">
+                <i class="fas fa-shield-alt"></i> Secure & Encrypted Face Recognition
+                <span class="mx-2">•</span>
+                <i class="fas fa-bolt"></i> Real-time Processing
+                <span class="mx-2">•</span>
+                <i class="fas fa-user-lock"></i> Privacy Protected
+            </p>
+            <small class="text-muted">
+                Need help? Contact: IT Support - Room 201 | support@sr.edu
+            </small>
+        </div>
+    </div>
+
+    <!-- QR Modal -->
+    <div class="modal fade" id="qrModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-qrcode"></i> Your Attendance QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="qr-display mb-3" style="width: 250px; height: 250px;">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <p class="mb-1">Scan this code at any campus kiosk</p>
+                    <p class="text-muted"><small>SR Code: SR-12345 | Valid for this semester</small></p>
+                    <div class="d-grid gap-2 mt-3">
+                        <button class="btn btn-primary" onclick="downloadQRCode()">
+                            <i class="fas fa-download"></i> Download QR Code
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="printQRCode()">
+                            <i class="fas fa-print"></i> Print QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Global variables
+        let isScanning = false;
+        let autoScanTimer = 5;
+        let autoScanInterval = null;
+        let detectedFaces = [];
+        let selectedStudent = null;
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start auto-scan timer
+            startAutoScanTimer();
+            
+            // Simulate face detection for demo
+            simulateFaceDetection();
+            
+            // Load student QR code
+            loadQRCode();
+        });
+        
+        // Start auto-scan timer
+        function startAutoScanTimer() {
+            autoScanTimer = 5;
+            updateAutoScanTimer();
+            
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+            }
+            
+            autoScanInterval = setInterval(() => {
+                autoScanTimer--;
+                updateAutoScanTimer();
+                
+                if (autoScanTimer <= 0) {
+                    performAutoScan();
+                }
+            }, 1000);
+        }
+        
+        function updateAutoScanTimer() {
+            document.getElementById('autoScanTimer').textContent = autoScanTimer;
+        }
+        
+        // Simulate face detection for demo
+        function simulateFaceDetection() {
+            setInterval(() => {
+                // Random number of faces for demo
+                const faceCount = Math.floor(Math.random() * 3);
+                document.getElementById('faceCount').textContent = faceCount;
+                
+                if (faceCount > 0) {
+                    document.getElementById('cameraStatus').classList.add('active');
+                    document.getElementById('cameraStatus').innerHTML = 
+                        '<i class="fas fa-check-circle"></i> Face Detected';
+                    
+                    // Show face boxes
+                    drawFaceBoxes(faceCount);
+                    
+                    // If multiple faces, show selection
+                    if (faceCount > 1) {
+                        showFaceSelection(faceCount);
+                    } else {
+                        hideFaceSelection();
+                    }
+                } else {
+                    document.getElementById('cameraStatus').classList.remove('active');
+                    document.getElementById('cameraStatus').innerHTML = 
+                        '<i class="fas fa-circle"></i> Camera Active';
+                    clearFaceBoxes();
+                    hideFaceSelection();
+                }
+            }, 2000); // Update every 2 seconds
+        }
+        
+        // Draw face boxes on overlay
+        function drawFaceBoxes(count) {
+            const overlay = document.getElementById('faceOverlay');
+            overlay.innerHTML = '';
+            
+            for (let i = 0; i < count; i++) {
+                // Random position for demo
+                const left = 20 + (i * 30);
+                const top = 40 + (i * 20);
+                const width = 150;
+                const height = 180;
+                
+                const faceBox = document.createElement('div');
+                faceBox.className = 'face-box';
+                faceBox.style.left = `${left}%`;
+                faceBox.style.top = `${top}px`;
+                faceBox.style.width = `${width}px`;
+                faceBox.style.height = `${height}px`;
+                
+                const faceLabel = document.createElement('div');
+                faceLabel.className = 'face-label';
+                faceLabel.textContent = `Face ${i + 1}`;
+                faceLabel.style.left = `${left}%`;
+                
+                overlay.appendChild(faceBox);
+                overlay.appendChild(faceLabel);
+            }
+        }
+        
+        function clearFaceBoxes() {
+            document.getElementById('faceOverlay').innerHTML = '';
+        }
+        
+        // Show face selection for multiple faces
+        function showFaceSelection(count) {
+            const selectionDiv = document.getElementById('faceSelection');
+            selectionDiv.innerHTML = '';
+            
+            // Demo student options
+            const demoStudents = [
+                { name: 'John Doe', srCode: 'SR-12345', section: 'CS-101' },
+                { name: 'Jane Smith', srCode: 'SR-12346', section: 'CS-101' },
+                { name: 'Bob Johnson', srCode: 'SR-12347', section: 'CS-102' }
+            ];
+            
+            for (let i = 0; i < Math.min(count, demoStudents.length); i++) {
+                const student = demoStudents[i];
+                const option = document.createElement('div');
+                option.className = 'd-flex align-items-center p-3 border rounded';
+                option.style.cursor = 'pointer';
+                option.onclick = () => selectFace(student, i);
+                
+                option.innerHTML = `
+                    <div class="me-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" 
+                             style="width: 50px; height: 50px; font-weight: bold;">
+                            ${student.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="mb-1">${student.name}</h6>
+                        <p class="mb-0 text-muted">${student.srCode} • ${student.section}</p>
+                    </div>
+                    <div class="text-end">
+                        <i class="fas fa-chevron-right"></i>
+                    </div>
+                `;
+                
+                selectionDiv.appendChild(option);
+            }
+            
+            document.getElementById('manualSelect').style.display = 'block';
+        }
+        
+        function hideFaceSelection() {
+            document.getElementById('manualSelect').style.display = 'none';
+        }
+        
+        function selectFace(student, faceIndex) {
+            selectedStudent = student;
+            
+            // Update student info display
+            document.getElementById('studentAvatar').textContent = 
+                student.name.split(' ').map(n => n[0]).join('');
+            document.getElementById('studentName').textContent = student.name;
+            document.getElementById('studentSRCode').textContent = student.srCode;
+            document.getElementById('studentSection').textContent = student.section;
+            document.getElementById('studentDepartment').textContent = 'Computer Science';
+            
+            document.getElementById('studentInfo').style.display = 'block';
+            
+            // Highlight selected face
+            const faceBoxes = document.querySelectorAll('.face-box');
+            faceBoxes.forEach((box, index) => {
+                if (index === faceIndex) {
+                    box.style.borderColor = '#3498db';
+                    box.style.background = 'rgba(52, 152, 219, 0.2)';
+                } else {
+                    box.style.borderColor = '#e74c3c';
+                    box.style.background = 'rgba(231, 76, 60, 0.1)';
+                }
+            });
+            
+            // Reset auto-scan timer
+            startAutoScanTimer();
+        }
+        
+        // Manual scan
+        function manualScan() {
+            if (isScanning) return;
+            
+            const faceCount = parseInt(document.getElementById('faceCount').textContent);
+            
+            if (faceCount === 0) {
+                alert('No face detected. Please position your face in the frame.');
+                return;
+            }
+            
+            if (faceCount > 1 && !selectedStudent) {
+                alert('Multiple faces detected. Please select which student you are.');
+                return;
+            }
+            
+            performScan();
+        }
+        
+        // Auto scan
+        function performAutoScan() {
+            if (isScanning) return;
+            
+            const faceCount = parseInt(document.getElementById('faceCount').textContent);
+            
+            if (faceCount === 0) {
+                // No face detected, reset timer
+                startAutoScanTimer();
+                return;
+            }
+            
+            if (faceCount === 1) {
+                // Single face, auto-select
+                const defaultStudent = {
+                    name: 'John Doe',
+                    srCode: 'SR-12345',
+                    section: 'CS-101',
+                    department: 'Computer Science'
+                };
+                selectedStudent = defaultStudent;
+            }
+            
+            // If multiple faces but none selected, don't auto-scan
+            if (faceCount > 1 && !selectedStudent) {
+                startAutoScanTimer();
+                return;
+            }
+            
+            performScan();
+        }
+        
+        // Perform the actual scan
+        function performScan() {
+            isScanning = true;
+            
+            // Show loading
+            document.getElementById('scanningSpinner').style.display = 'block';
+            document.getElementById('scanButton').disabled = true;
+            document.getElementById('scanButton').innerHTML = 
+                '<i class="fas fa-spinner fa-spin"></i> Scanning...';
+            
+            // Clear auto-scan timer
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+            }
+            
+            // Simulate scan process
+            setTimeout(() => {
+                // Hide loading
+                document.getElementById('scanningSpinner').style.display = 'none';
+                
+                // Show results
+                showScanResults();
+                
+                isScanning = false;
+            }, 2000); // Simulate 2-second scan
+        }
+        
+        // Show scan results
+        function showScanResults() {
+            const now = new Date();
+            const currentTime = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            const currentDate = now.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Determine if late (demo: after 8:15 AM is late)
+            const isLate = now.getHours() > 8 || (now.getHours() === 8 && now.getMinutes() > 15);
+            const lateMinutes = isLate ? now.getMinutes() - 15 : 0;
+            
+            // Generate receipt
+            const receiptHTML = `
+                <div class="receipt-card">
+                    <div class="receipt-header">
+                        <div class="receipt-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h3>Attendance Recorded!</h3>
+                        <p class="text-muted">Your attendance has been successfully recorded</p>
+                    </div>
+                    
+                    <div class="receipt-details">
+                        <div class="receipt-item">
+                            <div class="receipt-label">Student Name</div>
+                            <div class="receipt-value">${selectedStudent.name}</div>
+                        </div>
+                        <div class="receipt-item">
+                            <div class="receipt-label">SR Code</div>
+                            <div class="receipt-value">${selectedStudent.srCode}</div>
+                        </div>
+                        <div class="receipt-item">
+                            <div class="receipt-label">Section</div>
+                            <div class="receipt-value">${selectedStudent.section}</div>
+                        </div>
+                        <div class="receipt-item">
+                            <div class="receipt-label">Date & Time</div>
+                            <div class="receipt-value">${currentDate}<br>${currentTime}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mb-4">
+                        <h5>Status: 
+                            <span class="status-badge ${isLate ? 'badge-late' : 'badge-on-time'}">
+                                ${isLate ? 'LATE' : 'ON TIME'}
+                            </span>
+                        </h5>
+                        ${isLate ? 
+                            `<p class="text-warning mb-0">
+                                <i class="fas fa-clock"></i> ${lateMinutes} minutes late
+                            </p>` : 
+                            `<p class="text-success mb-0">
+                                <i class="fas fa-check"></i> Perfect timing!
+                            </p>`
+                        }
+                    </div>
+                    
+                    <div class="subject-list">
+                        <h6><i class="fas fa-book"></i> Today's Attendance Record</h6>
+                        
+                        <div class="subject-item">
+                            <div>
+                                <strong>CS101 - Introduction to Programming</strong>
+                                <div class="text-muted">08:00 - 10:00 | Room 301</div>
+                            </div>
+                            <span class="status-badge badge-on-time">Present</span>
+                        </div>
+                        
+                        <div class="subject-item">
+                            <div>
+                                <strong>CS102 - Data Structures</strong>
+                                <div class="text-muted">10:00 - 12:00 | Lab 205</div>
+                            </div>
+                            <span class="status-badge ${isLate ? 'badge-late' : 'badge-on-time'}">
+                                ${isLate ? 'Late' : 'Upcoming'}
+                            </span>
+                        </div>
+                        
+                        <div class="subject-item">
+                            <div>
+                                <strong>MATH101 - Calculus</strong>
+                                <div class="text-muted">13:00 - 15:00 | Room 102</div>
+                            </div>
+                            <span class="status-badge badge-on-time">Upcoming</span>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-success mt-4">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Note:</strong> Your attendance has been recorded in the system. 
+                        You can view your attendance history in your dashboard.
+                    </div>
+                </div>
+            `;
+            
+            // Update results section
+            document.getElementById('scanResults').innerHTML = receiptHTML;
+            document.getElementById('scanResults').style.display = 'block';
+            
+            // Switch to results section
+            document.getElementById('scanSection').classList.remove('active');
+            document.getElementById('resultsSection').classList.add('active');
+        }
+        
+        // Camera functions
+        function switchCamera() {
+            alert('Switching camera... (This feature requires multiple camera support)');
+        }
+        
+        function stopCamera() {
+            // In a real implementation, we would stop the stream
+            // For now, just hide the feed and reset
+            document.getElementById('camera-feed').style.display = 'none';
+            document.getElementById('cameraStatus').classList.remove('active');
+            document.getElementById('cameraStatus').innerHTML = 
+                '<i class="fas fa-circle"></i> Camera Stopped';
+            document.getElementById('faceCount').textContent = '0';
+            clearFaceBoxes();
+            hideFaceSelection();
+            
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+            }
+        }
+        
+        // Navigation
+        function goBackToScan() {
+            document.getElementById('scanSection').classList.add('active');
+            document.getElementById('resultsSection').classList.remove('active');
+            
+            // Reset scan button
+            document.getElementById('scanButton').disabled = false;
+            document.getElementById('scanButton').innerHTML = 
+                '<i class="fas fa-camera"></i> Scan Face Now';
+            
+            // Restart auto-scan timer
+            startAutoScanTimer();
+            
+            // Show camera feed again
+            document.getElementById('camera-feed').style.display = 'block';
+        }
+        
+        function goToDashboard() {
+            alert('Redirecting to your dashboard...');
+            window.location.href = "{{ url_for('student_portal') }}";
+        }
+        
+        // QR Code functions
+        function loadQRCode() {
+            // Set QR code SR Code
+            document.getElementById('qrSRCode').textContent = 'SR-12345';
+        }
+        
+        function showQRModal() {
+            const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+            modal.show();
+        }
+        
+        function downloadQRCode() {
+            alert('Downloading your QR code...\n\nSave it to your phone for quick attendance at kiosks.');
+        }
+        
+        function printQRCode() {
+            window.print();
+        }
+        
+        function downloadReceipt() {
+            alert('Downloading attendance receipt as PDF...\n\nThis will include all today\'s attendance records.');
+        }
+        
+        // Clean up
+        window.addEventListener('beforeunload', function() {
+            if (autoScanInterval) {
+                clearInterval(autoScanInterval);
+            }
+        });
+    </script>
+</body>
+</html>

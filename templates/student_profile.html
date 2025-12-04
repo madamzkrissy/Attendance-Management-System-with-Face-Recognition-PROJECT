@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Face Attendance System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --info-color: #17a2b8;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .profile-header {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            padding: 2.5rem 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .profile-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" opacity="0.05"><path d="M50,20 C65,20 77,32 77,47 C77,62 65,74 50,74 C35,74 23,62 23,47 C23,32 35,20 50,20" fill="none" stroke="white" stroke-width="2"/></svg>') repeat;
+        }
+        
+        .profile-avatar {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 5px solid white;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            position: relative;
+            cursor: pointer;
+        }
+        
+        .profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .profile-avatar .edit-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .profile-avatar:hover .edit-overlay {
+            opacity: 1;
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+        
+        .profile-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+            border-color: var(--primary-color);
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .info-item {
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .info-label {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            color: var(--secondary-color);
+        }
+        
+        .attendance-chart {
+            height: 200px;
+            position: relative;
+            margin: 2rem 0;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 100%;
+            width: 100%;
+        }
+        
+        .chart-bar {
+            position: absolute;
+            bottom: 0;
+            width: 30px;
+            border-radius: 5px 5px 0 0;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .chart-bar:hover {
+            transform: scaleY(1.1);
+        }
+        
+        .chart-bar.present {
+            background: var(--success-color);
+        }
+        
+        .chart-bar.late {
+            background: var(--warning-color);
+        }
+        
+        .chart-bar.absent {
+            background: var(--danger-color);
+        }
+        
+        .attendance-table th {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+        }
+        
+        .attendance-table tbody tr {
+            transition: all 0.3s;
+        }
+        
+        .attendance-table tbody tr:hover {
+            background-color: #f8f9fa;
+            transform: scale(1.01);
+        }
+        
+        .status-badge {
+            padding: 0.4rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        .badge-present {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-late {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-absent {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-excused {
+            background: #cce5ff;
+            color: #004085;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .btn-action {
+            min-width: 120px;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .section-tabs {
+            border-bottom: 2px solid #dee2e6;
+            margin-bottom: 2rem;
+        }
+        
+        .section-tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            color: #6c757d;
+            font-weight: 600;
+            position: relative;
+            transition: all 0.3s;
+        }
+        
+        .section-tab:hover {
+            color: var(--primary-color);
+        }
+        
+        .section-tab.active {
+            color: var(--primary-color);
+        }
+        
+        .section-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px 3px 0 0;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-icon {
+            font-size: 4rem;
+            color: #dee2e6;
+            margin-bottom: 1rem;
+        }
+        
+        .logout-timer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            z-index: 1000;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .timer-warning {
+            animation: pulseWarning 1s infinite;
+        }
+        
+        @keyframes pulseWarning {
+            0% { background-color: rgba(231, 76, 60, 0.9); }
+            50% { background-color: rgba(231, 76, 60, 1); }
+            100% { background-color: rgba(231, 76, 60, 0.9); }
+        }
+        
+        .modal-custom .modal-content {
+            border-radius: 15px;
+            border: none;
+        }
+        
+        .modal-custom .modal-header {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            color: white;
+            border-radius: 15px 15px 0 0;
+        }
+        
+        .qr-display {
+            width: 200px;
+            height: 200px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 1rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4rem;
+            color: var(--secondary-color);
+            border: 2px dashed #dee2e6;
+        }
+        
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-action {
+                width: 100%;
+            }
+            
+            .profile-avatar {
+                width: 120px;
+                height: 120px;
+            }
+            
+            .logout-timer {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark" style="background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('student_portal') }}">
+                <i class="fas fa-graduation-cap"></i> Student Portal
+            </a>
+            <div class="navbar-text text-white">
+                <span id="currentTime">00:00:00</span>
+            </div>
+            <div class="d-flex">
+                <a href="{{ url_for('student_portal') }}" class="btn btn-outline-light btn-sm me-2">
+                    <i class="fas fa-home"></i> Portal
+                </a>
+                <button class="btn btn-outline-light btn-sm" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-3 text-center">
+                    <div class="profile-avatar" onclick="changeProfilePicture()">
+                        <div class="edit-overlay">
+                            <i class="fas fa-camera fa-2x"></i>
+                        </div>
+                        <img src="https://ui-avatars.com/api/?name=John+Doe&background=3498db&color=fff&size=150" 
+                             alt="Profile Picture" id="profilePicture">
+                    </div>
+                </div>
+                <div class="col-md-9">
+                    <h1 class="display-5 mb-2" id="studentName">John Doe</h1>
+                    <div class="d-flex flex-wrap gap-3 mb-3">
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-id-card"></i> <span id="studentSRCode">SR-12345</span>
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-users"></i> <span id="studentSection">CS-101</span>
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-graduation-cap"></i> Year <span id="studentYear">2</span>
+                        </span>
+                        <span class="badge bg-light text-dark">
+                            <i class="fas fa-building"></i> <span id="studentDepartment">Computer Science</span>
+                        </span>
+                    </div>
+                    <p class="mb-0">
+                        <i class="fas fa-envelope"></i> <span id="studentEmail">john.doe@sr.edu</span>
+                        <span class="mx-3">•</span>
+                        <i class="fas fa-phone"></i> <span id="studentPhone">+63 912 345 6789</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container py-4">
+        <!-- Section Tabs -->
+        <div class="section-tabs">
+            <div class="d-flex flex-wrap">
+                <button class="section-tab active" onclick="switchTab('overview')">
+                    <i class="fas fa-tachometer-alt"></i> Overview
+                </button>
+                <button class="section-tab" onclick="switchTab('attendance')">
+                    <i class="fas fa-calendar-check"></i> Attendance
+                </button>
+                <button class="section-tab" onclick="switchTab('schedule')">
+                    <i class="fas fa-calendar-alt"></i> Schedule
+                </button>
+                <button class="section-tab" onclick="switchTab('subjects')">
+                    <i class="fas fa-book"></i> Subjects
+                </button>
+                <button class="section-tab" onclick="switchTab('settings')">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons mb-4">
+            <button class="btn btn-primary btn-action" onclick="takeAttendance()">
+                <i class="fas fa-camera"></i> Take Attendance
+            </button>
+            <button class="btn btn-success btn-action" onclick="viewQRCode()">
+                <i class="fas fa-qrcode"></i> My QR Code
+            </button>
+            <button class="btn btn-warning btn-action" onclick="downloadReport()">
+                <i class="fas fa-download"></i> Download Report
+            </button>
+            <button class="btn btn-info btn-action" onclick="requestCorrection()">
+                <i class="fas fa-edit"></i> Request Correction
+            </button>
+            <button class="btn btn-danger btn-action" onclick="updateFace()">
+                <i class="fas fa-user-circle"></i> Update Face Data
+            </button>
+        </div>
+
+        <!-- Tab Contents -->
+        
+        <!-- Overview Tab -->
+        <div class="tab-content active" id="overviewTab">
+            <div class="row">
+                <!-- Attendance Summary -->
+                <div class="col-lg-8">
+                    <div class="profile-card">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3><i class="fas fa-chart-bar"></i> Attendance Overview</h3>
+                            <select class="form-select w-auto" id="timeRange" onchange="updateAttendanceChart()">
+                                <option value="week">This Week</option>
+                                <option value="month" selected>This Month</option>
+                                <option value="semester">This Semester</option>
+                                <option value="all">All Time</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row text-center mb-4">
+                            <div class="col-3">
+                                <div class="h2 text-success mb-1" id="presentCount">45</div>
+                                <div class="text-muted">Present</div>
+                            </div>
+                            <div class="col-3">
+                                <div class="h2 text-warning mb-1" id="lateCount">3</div>
+                                <div class="text-muted">Late</div>
+                            </div>
+                            <div class="col-3">
+                                <div class="h2 text-danger mb-1" id="absentCount">2</div>
+                                <div class="text-muted">Absent</div>
+                            </div>
+                            <div class="col-3">
+                                <div class="h2 text-primary mb-1" id="attendanceRate">92%</div>
+                                <div class="text-muted">Rate</div>
+                            </div>
+                        </div>
+                        
+                        <div class="attendance-chart">
+                            <div class="chart-container" id="attendanceChart">
+                                <!-- Chart bars will be generated by JavaScript -->
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <small class="text-muted">Hover over bars to see details</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Quick Stats -->
+                <div class="col-lg-4">
+                    <div class="profile-card">
+                        <h3 class="mb-4"><i class="fas fa-bolt"></i> Quick Stats</h3>
+                        
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <div class="info-label">Current Streak</div>
+                                <div class="info-value">12 days</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Best Streak</div>
+                                <div class="info-value">45 days</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">On Time Rate</div>
+                                <div class="info-value">87%</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Classes Today</div>
+                                <div class="info-value">3/3</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6><i class="fas fa-trophy"></i> Achievements</h6>
+                            <div class="d-flex flex-wrap gap-2 mt-2">
+                                <span class="badge bg-warning">Perfect Week</span>
+                                <span class="badge bg-info">Early Bird</span>
+                                <span class="badge bg-success">Consistent</span>
+                                <span class="badge bg-primary">100% Club</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Recent Activity -->
+                    <div class="profile-card mt-3">
+                        <h3 class="mb-4"><i class="fas fa-history"></i> Recent Activity</h3>
+                        
+                        <div class="list-group list-group-flush">
+                            <div class="list-group-item border-0 px-0 py-2">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1"><i class="fas fa-check-circle text-success"></i> Checked In</h6>
+                                    <small>Today, 08:05</small>
+                                </div>
+                                <p class="mb-1 small">CS101 - On Time</p>
+                            </div>
+                            <div class="list-group-item border-0 px-0 py-2">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1"><i class="fas fa-check-circle text-warning"></i> Checked In</h6>
+                                    <small>Yesterday, 10:20</small>
+                                </div>
+                                <p class="mb-1 small">CS102 - Late (20 min)</p>
+                            </div>
+                            <div class="list-group-item border-0 px-0 py-2">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h6 class="mb-1"><i class="fas fa-times-circle text-danger"></i> Absent</h6>
+                                    <small>Nov 15</small>
+                                </div>
+                                <p class="mb-1 small">MATH101 - No check-in</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Today's Classes -->
+            <div class="profile-card mt-3">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3><i class="fas fa-calendar-day"></i> Today's Classes</h3>
+                    <span class="badge bg-primary" id="todayDate">November 20, 2023</span>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Time</th>
+                                <th>Subject</th>
+                                <th>Room</th>
+                                <th>Teacher</th>
+                                <th>Status</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                            </tr>
+                        </thead>
+                        <tbody id="todayClasses">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance Tab -->
+        <div class="tab-content" id="attendanceTab">
+            <div class="profile-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3><i class="fas fa-calendar-check"></i> Attendance Records</h3>
+                    <div class="d-flex gap-2">
+                        <input type="date" class="form-control" id="startDate">
+                        <span class="align-self-center">to</span>
+                        <input type="date" class="form-control" id="endDate">
+                        <button class="btn btn-primary" onclick="filterAttendance()">
+                            <i class="fas fa-filter"></i> Filter
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-hover attendance-table" id="attendanceRecords">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Day</th>
+                                <th>Subject</th>
+                                <th>Scheduled</th>
+                                <th>Check-in</th>
+                                <th>Check-out</th>
+                                <th>Status</th>
+                                <th>Late By</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="text-center mt-3">
+                    <button class="btn btn-outline-primary" onclick="exportAttendance()">
+                        <i class="fas fa-file-export"></i> Export to Excel
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Schedule Tab -->
+        <div class="tab-content" id="scheduleTab">
+            <div class="profile-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3><i class="fas fa-calendar-alt"></i> Class Schedule</h3>
+                    <div class="btn-group">
+                        <button class="btn btn-outline-primary active" onclick="showSchedule('weekly')">
+                            Weekly View
+                        </button>
+                        <button class="btn btn-outline-primary" onclick="showSchedule('daily')">
+                            Daily View
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="weeklySchedule">
+                    <div class="table-responsive">
+                        <table class="table table-bordered text-center">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Monday</th>
+                                    <th>Tuesday</th>
+                                    <th>Wednesday</th>
+                                    <th>Thursday</th>
+                                    <th>Friday</th>
+                                    <th>Saturday</th>
+                                </tr>
+                            </thead>
+                            <tbody id="scheduleTable">
+                                <!-- Will be populated by JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div id="dailySchedule" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Today's Schedule</h5>
+                            <div class="list-group" id="todayScheduleList">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Tomorrow's Schedule</h5>
+                            <div class="list-group" id="tomorrowScheduleList">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Subjects Tab -->
+        <div class="tab-content" id="subjectsTab">
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="profile-card">
+                        <h3 class="mb-4"><i class="fas fa-book"></i> My Subjects</h3>
+                        
+                        <div class="row" id="subjectsList">
+                            <!-- Will be populated by JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="profile-card">
+                        <h3 class="mb-4"><i class="fas fa-chart-pie"></i> Subject Performance</h3>
+                        
+                        <div class="text-center">
+                            <canvas id="subjectChart" width="200" height="200"></canvas>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6>Attendance by Subject</h6>
+                            <div class="mt-2" id="subjectStats">
+                                <!-- Will be populated by JavaScript -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Settings Tab -->
+        <div class="tab-content" id="settingsTab">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="profile-card">
+                        <h3 class="mb-4"><i class="fas fa-user-cog"></i> Account Settings</h3>
+                        
+                        <form id="profileForm">
+                            <div class="mb-3">
+                                <label class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="profileEmail" value="john.doe@sr.edu">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="profilePhone" value="+63 912 345 6789">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Emergency Contact</label>
+                                <input type="text" class="form-control" id="emergencyContact" value="Jane Doe">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Emergency Phone</label>
+                                <input type="tel" class="form-control" id="emergencyPhone" value="+63 917 654 3210">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Notifications</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                                    <label class="form-check-label" for="emailNotifications">
+                                        Email notifications
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="smsNotifications">
+                                    <label class="form-check-label" for="smsNotifications">
+                                        SMS notifications
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="profile-card">
+                        <h3 class="mb-4"><i class="fas fa-shield-alt"></i> Security</h3>
+                        
+                        <div class="mb-4">
+                            <h6>Face Data</h6>
+                            <p class="text-muted">Last updated: November 15, 2023</p>
+                            <button class="btn btn-outline-primary w-100" onclick="updateFace()">
+                                <i class="fas fa-camera"></i> Update Face Recognition Data
+                            </button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6>QR Code</h6>
+                            <div class="qr-display mb-3">
+                                <i class="fas fa-qrcode"></i>
+                            </div>
+                            <button class="btn btn-outline-secondary w-100" onclick="downloadQRCode()">
+                                <i class="fas fa-download"></i> Download QR Code
+                            </button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <h6>Privacy Settings</h6>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showAttendance" checked>
+                                <label class="form-check-label" for="showAttendance">
+                                    Show attendance to teachers
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="showProfile" checked>
+                                <label class="form-check-label" for="showProfile">
+                                    Show profile to classmates
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Auto-logout:</strong> You will be automatically logged out after 3 minutes of inactivity.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auto Logout Timer -->
+    <div class="logout-timer" id="logoutTimer">
+        <i class="fas fa-clock"></i> Auto logout in: <span id="sessionTimer">03:00</span>
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal fade modal-custom" id="qrModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-qrcode"></i> My QR Code</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center">
+                    <div class="qr-display mb-3">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <p class="mb-1">Scan this code at campus kiosks for quick attendance</p>
+                    <p class="text-muted"><small>SR Code: SR-12345</small></p>
+                    <div class="d-grid gap-2 mt-3">
+                        <button class="btn btn-primary" onclick="downloadQRCode()">
+                            <i class="fas fa-download"></i> Download QR Code
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="printQRCode()">
+                            <i class="fas fa-print"></i> Print QR Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Global variables
+        let sessionTimer = 180; // 3 minutes
+        let timerInterval = null;
+        let subjectChart = null;
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date
+            const today = new Date();
+            document.getElementById('todayDate').textContent = 
+                today.toLocaleDateString('en-US', { 
+                    month: 'long', 
+                    day: 'numeric', 
+                    year: 'numeric' 
+                });
+            
+            // Load student data
+            loadStudentData();
+            
+            // Initialize DataTable
+            $('#attendanceRecords').DataTable({
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, -1], [10, 25, 50, "All"]],
+                order: [[0, 'desc']],
+                language: {
+                    search: "_INPUT_",
+                    searchPlaceholder: "Search attendance..."
+                }
+            });
+            
+            // Populate data
+            populateTodayClasses();
+            populateAttendanceRecords();
+            populateWeeklySchedule();
+            populateSubjects();
+            createSubjectChart();
+            
+            // Start time updates
+            updateTime();
+            setInterval(updateTime, 1000);
+            
+            // Start session timer
+            startSessionTimer();
+            
+            // Setup activity listeners for timer reset
+            setupActivityListeners();
+            
+            // Form submission
+            document.getElementById('profileForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                saveProfileChanges();
+            });
+        });
+        
+        // Load student data
+        function loadStudentData() {
+            // Demo data - replace with API call
+            const studentData = {
+                name: "John Doe",
+                srCode: "SR-12345",
+                section: "CS-101",
+                year: "2",
+                department: "Computer Science",
+                email: "john.doe@sr.edu",
+                phone: "+63 912 345 6789",
+                attendanceRate: "92",
+                presentCount: "45",
+                lateCount: "3",
+                absentCount: "2"
+            };
+            
+            // Update UI
+            document.getElementById('studentName').textContent = studentData.name;
+            document.getElementById('studentSRCode').textContent = studentData.srCode;
+            document.getElementById('studentSection').textContent = studentData.section;
+            document.getElementById('studentYear').textContent = studentData.year;
+            document.getElementById('studentDepartment').textContent = studentData.department;
+            document.getElementById('studentEmail').textContent = studentData.email;
+            document.getElementById('studentPhone').textContent = studentData.phone;
+            
+            document.getElementById('attendanceRate').textContent = studentData.attendanceRate + "%";
+            document.getElementById('presentCount').textContent = studentData.presentCount;
+            document.getElementById('lateCount').textContent = studentData.lateCount;
+            document.getElementById('absentCount').textContent = studentData.absentCount;
+            
+            // Create attendance chart
+            createAttendanceChart();
+        }
+        
+        // Update time
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', {hour12: false});
+            document.getElementById('currentTime').textContent = timeString;
+        }
+        
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active from all tab buttons
+            document.querySelectorAll('.section-tab').forEach(button => {
+                button.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Activate corresponding button
+            document.querySelector(`.section-tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+        }
+        
+        // Create attendance chart
+        function createAttendanceChart() {
+            const chartContainer = document.getElementById('attendanceChart');
+            chartContainer.innerHTML = '';
+            
+            // Demo data for the past 7 days
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const data = [
+                { present: 3, late: 0, absent: 0 }, // Monday
+                { present: 3, late: 1, absent: 0 }, // Tuesday
+                { present: 2, late: 0, absent: 1 }, // Wednesday
+                { present: 3, late: 0, absent: 0 }, // Thursday
+                { present: 3, late: 1, absent: 0 }, // Friday
+                { present: 1, late: 0, absent: 0 }, // Saturday
+                { present: 0, late: 0, absent: 0 }  // Sunday
+            ];
+            
+            const totalWidth = chartContainer.offsetWidth;
+            const barWidth = totalWidth / days.length * 0.6;
+            const gap = totalWidth / days.length * 0.4;
+            
+            days.forEach((day, index) => {
+                const dayData = data[index];
+                const total = dayData.present + dayData.late + dayData.absent;
+                
+                if (total > 0) {
+                    // Calculate heights
+                    const presentHeight = (dayData.present / total) * 150;
+                    const lateHeight = (dayData.late / total) * 150;
+                    const absentHeight = (dayData.absent / total) * 150;
+                    
+                    // Create bars
+                    let currentBottom = 0;
+                    
+                    // Present bar
+                    if (presentHeight > 0) {
+                        const presentBar = document.createElement('div');
+                        presentBar.className = 'chart-bar present';
+                        presentBar.style.height = presentHeight + 'px';
+                        presentBar.style.left = (index * (barWidth + gap)) + 'px';
+                        presentBar.style.bottom = currentBottom + 'px';
+                        presentBar.title = `${day}: ${dayData.present} present`;
+                        chartContainer.appendChild(presentBar);
+                        currentBottom += presentHeight;
+                    }
+                    
+                    // Late bar
+                    if (lateHeight > 0) {
+                        const lateBar = document.createElement('div');
+                        lateBar.className = 'chart-bar late';
+                        lateBar.style.height = lateHeight + 'px';
+                        lateBar.style.left = (index * (barWidth + gap)) + 'px';
+                        lateBar.style.bottom = currentBottom + 'px';
+                        lateBar.title = `${day}: ${dayData.late} late`;
+                        chartContainer.appendChild(lateBar);
+                        currentBottom += lateHeight;
+                    }
+                    
+                    // Absent bar
+                    if (absentHeight > 0) {
+                        const absentBar = document.createElement('div');
+                        absentBar.className = 'chart-bar absent';
+                        absentBar.style.height = absentHeight + 'px';
+                        absentBar.style.left = (index * (barWidth + gap)) + 'px';
+                        absentBar.style.bottom = currentBottom + 'px';
+                        absentBar.title = `${day}: ${dayData.absent} absent`;
+                        chartContainer.appendChild(absentBar);
+                    }
+                }
+            });
+        }
+        
+        // Populate today's classes
+        function populateTodayClasses() {
+            const classes = [
+                {
+                    time: '08:00 - 10:00',
+                    subject: 'CS101 - Introduction to Programming',
+                    room: 'Room 301',
+                    teacher: 'Prof. Smith',
+                    status: 'Present',
+                    checkin: '08:05',
+                    checkout: '10:00'
+                },
+                {
+                    time: '10:00 - 12:00',
+                    subject: 'CS102 - Data Structures',
+                    room: 'Lab 205',
+                    teacher: 'Prof. Johnson',
+                    status: 'Upcoming',
+                    checkin: '-',
+                    checkout: '-'
+                },
+                {
+                    time: '13:00 - 15:00',
+                    subject: 'MATH101 - Calculus',
+                    room: 'Room 102',
+                    teacher: 'Prof. Davis',
+                    status: 'Upcoming',
+                    checkin: '-',
+                    checkout: '-'
+                }
+            ];
+            
+            const tbody = document.getElementById('todayClasses');
+            tbody.innerHTML = '';
+            
+            classes.forEach(cls => {
+                let statusBadge = '';
+                if (cls.status === 'Present') {
+                    statusBadge = '<span class="badge-present status-badge">Present</span>';
+                } else if (cls.status === 'Late') {
+                    statusBadge = '<span class="badge-late status-badge">Late</span>';
+                } else if (cls.status === 'Absent') {
+                    statusBadge = '<span class="badge-absent status-badge">Absent</span>';
+                } else {
+                    statusBadge = '<span class="badge bg-secondary">Upcoming</span>';
+                }
+                
+                const row = `
+                    <tr>
+                        <td>${cls.time}</td>
+                        <td>${cls.subject}</td>
+                        <td>${cls.room}</td>
+                        <td>${cls.teacher}</td>
+                        <td>${statusBadge}</td>
+                        <td>${cls.checkin}</td>
+                        <td>${cls.checkout}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        // Populate attendance records
+        function populateAttendanceRecords() {
+            const records = [
+                { date: '2023-11-20', day: 'Monday', subject: 'CS101', scheduled: '08:00', checkin: '08:05', checkout: '10:00', status: 'Present', late: '5 min', notes: '' },
+                { date: '2023-11-17', day: 'Friday', subject: 'CS102', scheduled: '10:00', checkin: '10:20', checkout: '12:00', status: 'Late', late: '20 min', notes: 'Traffic' },
+                { date: '2023-11-15', day: 'Wednesday', subject: 'MATH101', scheduled: '13:00', checkin: '-', checkout: '-', status: 'Absent', late: '-', notes: 'Sick' },
+                { date: '2023-11-13', day: 'Monday', subject: 'CS101', scheduled: '08:00', checkin: '08:00', checkout: '10:00', status: 'Present', late: '-', notes: '' },
+                { date: '2023-11-10', day: 'Friday', subject: 'CS102', scheduled: '10:00', checkin: '09:55', checkout: '12:00', status: 'Present', late: '-', notes: '' },
+                { date: '2023-11-08', day: 'Wednesday', subject: 'MATH101', scheduled: '13:00', checkin: '13:05', checkout: '15:00', status: 'Present', late: '5 min', notes: '' }
+            ];
+            
+            const tbody = document.querySelector('#attendanceRecords tbody');
+            tbody.innerHTML = '';
+            
+            records.forEach(record => {
+                let statusBadge = '';
+                switch(record.status) {
+                    case 'Present': statusBadge = 'badge-present'; break;
+                    case 'Late': statusBadge = 'badge-late'; break;
+                    case 'Absent': statusBadge = 'badge-absent'; break;
+                    case 'Excused': statusBadge = 'badge-excused'; break;
+                }
+                
+                const row = `
+                    <tr>
+                        <td>${record.date}</td>
+                        <td>${record.day}</td>
+                        <td>${record.subject}</td>
+                        <td>${record.scheduled}</td>
+                        <td>${record.checkin}</td>
+                        <td>${record.checkout}</td>
+                        <td><span class="${statusBadge} status-badge">${record.status}</span></td>
+                        <td>${record.late}</td>
+                        <td>${record.notes}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        // Populate weekly schedule
+        function populateWeeklySchedule() {
+            const schedule = {
+                '08:00': ['CS101/R301', 'MATH101/R102', 'CS101/R301', 'PHYS101/R201', 'CS102/L205', ''],
+                '10:00': ['', 'CS102/L205', 'MATH101/R102', '', 'CS101/R301', ''],
+                '13:00': ['PHYS101/R201', '', '', 'CS102/L205', '', ''],
+                '15:00': ['', 'PHYS101/R201', '', '', '', '']
+            };
+            
+            const tbody = document.getElementById('scheduleTable');
+            tbody.innerHTML = '';
+            
+            Object.keys(schedule).forEach(time => {
+                const row = `
+                    <tr>
+                        <td class="table-secondary fw-bold">${time}</td>
+                        <td>${schedule[time][0] || '-'}</td>
+                        <td>${schedule[time][1] || '-'}</td>
+                        <td>${schedule[time][2] || '-'}</td>
+                        <td>${schedule[time][3] || '-'}</td>
+                        <td>${schedule[time][4] || '-'}</td>
+                        <td>${schedule[time][5] || '-'}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+        
+        // Populate subjects
+        function populateSubjects() {
+            const subjects = [
+                { code: 'CS101', name: 'Introduction to Programming', teacher: 'Prof. Smith', attendance: '95%', grade: 'A' },
+                { code: 'CS102', name: 'Data Structures', teacher: 'Prof. Johnson', attendance: '87%', grade: 'B+' },
+                { code: 'MATH101', name: 'Calculus', teacher: 'Prof. Davis', attendance: '68%', grade: 'C' },
+                { code: 'PHYS101', name: 'Physics', teacher: 'Prof. Wilson', attendance: '92%', grade: 'A-' }
+            ];
+            
+            const container = document.getElementById('subjectsList');
+            container.innerHTML = '';
+            
+            subjects.forEach(subject => {
+                const card = `
+                    <div class="col-md-6 mb-3">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <h5 class="card-title">${subject.code}</h5>
+                                <h6 class="card-subtitle mb-2 text-muted">${subject.name}</h6>
+                                <p class="card-text">
+                                    <small class="text-muted">Teacher: ${subject.teacher}</small>
+                                </p>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="badge ${subject.attendance >= '90' ? 'bg-success' : subject.attendance >= '75' ? 'bg-warning' : 'bg-danger'}">
+                                        ${subject.attendance} Attendance
+                                    </span>
+                                    <span class="badge bg-info">${subject.grade}</span>
+                                </div>
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-primary w-100" onclick="viewSubjectDetails('${subject.code}')">
+                                        <i class="fas fa-chart-line"></i> View Details
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += card;
+            });
+        }
+        
+        // Create subject chart
+        function createSubjectChart() {
+            const ctx = document.getElementById('subjectChart').getContext('2d');
+            
+            if (subjectChart) {
+                subjectChart.destroy();
+            }
+            
+            subjectChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['CS101', 'CS102', 'MATH101', 'PHYS101'],
+                    datasets: [{
+                        data: [95, 87, 68, 92],
+                        backgroundColor: [
+                            '#27ae60',
+                            '#3498db',
+                            '#e74c3c',
+                            '#f39c12'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.label}: ${context.raw}% attendance`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Populate subject stats
+            const stats = [
+                { subject: 'CS101', attendance: '95%', present: 19, total: 20 },
+                { subject: 'CS102', attendance: '87%', present: 17, total: 20 },
+                { subject: 'MATH101', attendance: '68%', present: 13, total: 20 },
+                { subject: 'PHYS101', attendance: '92%', present: 11, total: 12 }
+            ];
+            
+            const container = document.getElementById('subjectStats');
+            container.innerHTML = '';
+            
+            stats.forEach(stat => {
+                const item = `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${stat.subject}</span>
+                        <div>
+                            <span class="badge ${stat.attendance >= '90' ? 'bg-success' : stat.attendance >= '75' ? 'bg-warning' : 'bg-danger'}">
+                                ${stat.attendance}
+                            </span>
+                            <small class="text-muted ms-2">${stat.present}/${stat.total}</small>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += item;
+            });
+        }
+        
+        // Session timer functions
+        function startSessionTimer() {
+            document.getElementById('logoutTimer').style.display = 'block';
+            sessionTimer = 180;
+            updateTimerDisplay();
+            
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            timerInterval = setInterval(() => {
+                sessionTimer--;
+                updateTimerDisplay();
+                
+                if (sessionTimer <= 30) {
+                    document.getElementById('logoutTimer').classList.add('timer-warning');
+                }
+                
+                if (sessionTimer <= 0) {
+                    autoLogout();
+                }
+            }, 1000);
+        }
+        
+        function updateTimerDisplay() {
+            const minutes = Math.floor(sessionTimer / 60);
+            const seconds = sessionTimer % 60;
+            const timeString = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            document.getElementById('sessionTimer').textContent = timeString;
+        }
+        
+        function resetTimer() {
+            sessionTimer = 180;
+            document.getElementById('logoutTimer').classList.remove('timer-warning');
+        }
+        
+        function setupActivityListeners() {
+            document.addEventListener('click', resetTimer);
+            document.addEventListener('keypress', resetTimer);
+            document.addEventListener('mousemove', resetTimer);
+        }
+        
+        function autoLogout() {
+            clearInterval(timerInterval);
+            alert('Session expired due to inactivity. For security, you have been logged out.');
+            window.location.href = "{{ url_for('student_portal') }}";
+        }
+        
+        // Action functions
+        function takeAttendance() {
+            alert('Redirecting to face scan page...');
+            window.location.href = "/student/scan";
+        }
+        
+        function viewQRCode() {
+            const modal = new bootstrap.Modal(document.getElementById('qrModal'));
+            modal.show();
+        }
+        
+        function downloadQRCode() {
+            alert('Downloading your QR code...\n\nSave it to your phone for quick attendance.');
+        }
+        
+        function printQRCode() {
+            window.print();
+        }
+        
+        function downloadReport() {
+            alert('Downloading attendance report...\n\nThis will generate a PDF report of your attendance records.');
+        }
+        
+        function requestCorrection() {
+            const date = prompt('Enter date for correction (YYYY-MM-DD):', '2023-11-20');
+            const reason = prompt('Enter reason for correction request:');
+            
+            if (date && reason) {
+                alert(`Correction request submitted for ${date}.\n\nReason: ${reason}\n\nYour teacher will review this request.`);
+            }
+        }
+        
+        function updateFace() {
+            if (confirm('This will update your face recognition data. You will need to take new photos. Continue?')) {
+                alert('Redirecting to face registration page...\n\nPlease make sure you are in a well-lit area.');
+                // window.location.href = "/student/update-face";
+            }
+        }
+        
+        function changeProfilePicture() {
+            alert('Feature coming soon: Upload new profile picture');
+        }
+        
+        function saveProfileChanges() {
+            alert('Profile changes saved successfully!');
+        }
+        
+        function filterAttendance() {
+            alert('Filtering attendance records...');
+            // In real implementation, reload table with filtered data
+        }
+        
+        function exportAttendance() {
+            alert('Exporting attendance records to Excel...');
+        }
+        
+        function showSchedule(view) {
+            if (view === 'weekly') {
+                document.getElementById('weeklySchedule').style.display = 'block';
+                document.getElementById('dailySchedule').style.display = 'none';
+            } else {
+                document.getElementById('weeklySchedule').style.display = 'none';
+                document.getElementById('dailySchedule').style.display = 'block';
+            }
+        }
+        
+        function viewSubjectDetails(subjectCode) {
+            alert(`Viewing details for ${subjectCode}\n\nThis would show detailed attendance and grade information.`);
+        }
+        
+        function logout() {
+            if (confirm('Are you sure you want to logout?')) {
+                clearInterval(timerInterval);
+                window.location.href = "{{ url_for('student_portal') }}";
+            }
+        }
+        
+        // Clean up on page unload
+        window.addEventListener('beforeunload', function() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+        });
+    </script>
+</body>
+</html>
