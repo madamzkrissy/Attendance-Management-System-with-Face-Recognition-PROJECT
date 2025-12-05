@@ -347,12 +347,12 @@
                 
                 <div class="row justify-content-center">
                     <div class="col-md-5">
-                        <div class="role-card student" onclick="selectRole('student')">
+                        <div class="role-card student" onclick="selectRole('student_menu')">
                             <div class="role-icon">
                                 <i class="fas fa-user-graduate"></i>
                             </div>
-                            <h3>Student Portal</h3>
-                            <p class="text-muted">Take attendance, check schedule, view records</p>
+                            <h3>Student</h3>
+                            <p class="text-muted">Portal or Quick Attendance</p>
                             <div class="mt-4">
                                 <span class="badge bg-primary">Face Recognition</span>
                                 <span class="badge bg-info mx-1">Auto Attendance</span>
@@ -467,11 +467,59 @@
         
         // Role selection functions
         function selectRole(role) {
-            if (role === 'student') {
-                window.location.href = '/student/portal';
+            if (role === 'student_menu') {
+                showStudentMenu();
             } else if (role === 'teacher') {
-                window.location.href = '/teacher/login';
+                window.location.href = '/teacher_login';
+            } else if (role === 'student_portal') {
+                window.location.href = '/student_portal';
+            } else if (role === 'attendance') {
+                window.location.href = '/student_scan';
             }
+        }
+        
+        function showStudentMenu() {
+            // Show modal with Student Portal and Attendance options
+            const menuHtml = `
+                <div class="modal fade" id="studentMenu" tabindex="-1" style="display: flex !important; align-items: center; justify-content: center;">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content" style="border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.2);">
+                            <div class="modal-header" style="border-bottom: 2px solid #6c63ff; padding: 20px;">
+                                <h5 class="modal-title" style="font-weight: 600; color: #333;">Student Menu</h5>
+                                <button type="button" class="btn-close" onclick="closeStudentMenu()"></button>
+                            </div>
+                            <div class="modal-body" style="padding: 30px;">
+                                <div class="row g-3">
+                                    <div class="col-12">
+                                        <button class="btn btn-primary w-100 py-3" onclick="selectRole('student_portal')" style="font-size: 16px; border-radius: 10px;">
+                                            <i class="fas fa-sign-in-alt"></i> Student Portal
+                                        </button>
+                                        <small class="text-muted d-block mt-2">Login/Register and check your profile</small>
+                                    </div>
+                                    <div class="col-12">
+                                        <button class="btn btn-success w-100 py-3" onclick="selectRole('attendance')" style="font-size: 16px; border-radius: 10px;">
+                                            <i class="fas fa-camera"></i> Quick Attendance
+                                        </button>
+                                        <small class="text-muted d-block mt-2">Scan your face for immediate attendance check-in</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Remove old menu if exists
+            const oldMenu = document.getElementById('studentMenu');
+            if (oldMenu) oldMenu.remove();
+            
+            document.body.insertAdjacentHTML('beforeend', menuHtml);
+            document.getElementById('studentMenu').style.display = 'flex';
+        }
+        
+        function closeStudentMenu() {
+            const menu = document.getElementById('studentMenu');
+            if (menu) menu.remove();
         }
         
         function resetSelection() {

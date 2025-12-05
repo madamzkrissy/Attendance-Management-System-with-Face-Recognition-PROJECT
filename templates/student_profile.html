@@ -434,9 +434,6 @@
             <button class="btn btn-primary btn-action" onclick="takeAttendance()">
                 <i class="fas fa-camera"></i> Take Attendance
             </button>
-            <button class="btn btn-success btn-action" onclick="viewQRCode()">
-                <i class="fas fa-qrcode"></i> My QR Code
-            </button>
             <button class="btn btn-warning btn-action" onclick="downloadReport()">
                 <i class="fas fa-download"></i> Download Report
             </button>
@@ -785,15 +782,6 @@
                         </div>
                         
                         <div class="mb-4">
-                            <h6>QR Code</h6>
-                            <div class="qr-display mb-3">
-                                <i class="fas fa-qrcode"></i>
-                            </div>
-                            <button class="btn btn-outline-secondary w-100" onclick="downloadQRCode()">
-                                <i class="fas fa-download"></i> Download QR Code
-                            </button>
-                        </div>
-                        
                         <div class="mb-4">
                             <h6>Privacy Settings</h6>
                             <div class="form-check">
@@ -823,33 +811,6 @@
     <!-- Auto Logout Timer -->
     <div class="logout-timer" id="logoutTimer">
         <i class="fas fa-clock"></i> Auto logout in: <span id="sessionTimer">03:00</span>
-    </div>
-
-    <!-- QR Code Modal -->
-    <div class="modal fade modal-custom" id="qrModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title"><i class="fas fa-qrcode"></i> My QR Code</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body text-center">
-                    <div class="qr-display mb-3">
-                        <i class="fas fa-qrcode"></i>
-                    </div>
-                    <p class="mb-1">Scan this code at campus kiosks for quick attendance</p>
-                    <p class="text-muted"><small>SR Code: SR-12345</small></p>
-                    <div class="d-grid gap-2 mt-3">
-                        <button class="btn btn-primary" onclick="downloadQRCode()">
-                            <i class="fas fa-download"></i> Download QR Code
-                        </button>
-                        <button class="btn btn-outline-secondary" onclick="printQRCode()">
-                            <i class="fas fa-print"></i> Print QR Code
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 
     <!-- Scripts -->

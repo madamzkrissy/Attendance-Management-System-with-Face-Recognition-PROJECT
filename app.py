@@ -265,8 +265,12 @@ def mark_attendance_for_student(student_id, section_id):
 def student_login():
     """Student login page"""
     if request.method == 'POST':
-        data = request.get_json()
-        sr_code = data.get('sr_code')
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+            sr_code = data.get('sr_code')
+        else:
+            sr_code = request.form.get('sr_code')
         
         student = Student.query.filter_by(sr_code=sr_code).first()
         if student:
@@ -334,6 +338,86 @@ def student_profile():
                          student=student, 
                          attendance_records=attendance_records)
 
+# ============ STUDENT ATTENDANCE SCAN ROUTE ============
+
+@app.route('/student_scan')
+def student_scan():
+    """Quick attendance via face scan - no login required"""
+    return render_template('student_scan.html')
+
+@app.route('/api/detect_attendance', methods=['POST'])
+def detect_attendance():
+    """Detect student from face and mark attendance"""
+    try:
+        data = request.get_json()
+        face_encoding = data.get('face_encoding')
+        
+        if not face_encoding:
+            return jsonify({'success': False, 'message': 'No face detected'})
+        
+        # Convert encoding from list to numpy array
+        face_encoding = np.array(face_encoding)
+        
+        # Load all student encodings and find match
+        encodings_dir = 'encodings'
+        if not os.path.exists(encodings_dir):
+            return jsonify({'success': False, 'message': 'No registered students'})
+        
+        for filename in os.listdir(encodings_dir):
+            if filename.endswith('.pkl'):
+                sr_code = filename.replace('.pkl', '')
+                encoding_path = os.path.join(encodings_dir, filename)
+                
+                with open(encoding_path, 'rb') as f:
+                    stored_encoding = pickle.load(f)
+                
+                # Compare faces
+                distance = np.linalg.norm(face_encoding - stored_encoding)
+                
+                if distance < 0.6:  # Match found
+                    student = Student.query.filter_by(sr_code=sr_code).first()
+                    if student:
+                        # Check if already marked today
+                        today = datetime.now().date()
+                        existing = Attendance.query.filter_by(
+                            student_id=student.id,
+                            date=today
+                        ).first()
+                        
+                        current_time = datetime.now().time()
+                        is_late = current_time > datetime.strptime("09:00:00", "%H:%M:%S").time()
+                        
+                        if not existing:
+                            attendance = Attendance(
+                                student_id=student.id,
+                                section_id=student.section_id,
+                                date=today,
+                                time_in=current_time,
+                                status='Present' if not is_late else 'Late'
+                            )
+                            db.session.add(attendance)
+                            db.session.commit()
+                        else:
+                            return jsonify({
+                                'success': False,
+                                'message': f'Already marked attendance today at {existing.time_in}'
+                            })
+                        
+                        section = Section.query.get(student.section_id)
+                        return jsonify({
+                            'success': True,
+                            'student_name': student.name,
+                            'sr_code': student.sr_code,
+                            'class': section.name if section else 'Unknown',
+                            'time_in': str(current_time),
+                            'status': 'Present' if not is_late else 'Late'
+                        })
+        
+        return jsonify({'success': False, 'message': 'Face not recognized'})
+    
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 # ============ GENERAL ROUTES ============
 
 @app.route('/')
@@ -345,9 +429,14 @@ def index():
 def teacher_login():
     """Teacher login page"""
     if request.method == 'POST':
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+            email = data.get('email')
+            password = data.get('password')
+        else:
+            email = request.form.get('email')
+            password = request.form.get('password')
         
         teacher = Teacher.query.filter_by(email=email).first()
         if teacher and teacher.check_password(password):
@@ -420,4 +509,4 @@ if __name__ == '__main__':
     with app.app_context():
         db.create_all()
     port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='127.0.0.1', port=port, debug=False)

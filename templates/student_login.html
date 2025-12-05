@@ -385,12 +385,12 @@
                             <input type="text" 
                                    class="form-control sr-code-input" 
                                    id="srCode" 
-                                   placeholder="SR-12345"
+                                   placeholder="CS-12345"
                                    maxlength="8"
-                                   pattern="SR-\d{5}"
-                                   title="Format: SR-##### (e.g., SR-12345)">
+                                   pattern="[A-Z]{2}-\d{5}"
+                                   title="Format: XX-XXXXX (e.g., CS-12345)">
                             <small class="text-muted d-block mt-2 text-center">
-                                Format: SR-##### (5 digits after SR-)
+                                Format: XX-XXXXX (2 letters, dash, 5 digits)
                             </small>
                         </div>
                         
@@ -399,15 +399,6 @@
                                 <i class="fas fa-arrow-right"></i> Continue
                             </button>
                         </div>
-                        
-                        <div class="qr-login">
-                            <p class="text-muted">Or scan QR code for quick login</p>
-                            <div class="qr-code">
-                                <i class="fas fa-qrcode"></i>
-                            </div>
-                            <small class="text-muted">
-                                Available at campus kiosks
-                            </small>
                         </div>
                     </div>
                     
@@ -420,7 +411,8 @@
                         
                         <!-- Camera Feed -->
                         <div class="camera-container">
-                            <img id="camera-feed" src="{{ url_for('video_feed') }}" alt="Camera Feed">
+                            <video id="camera-feed" autoplay playsinline></video>
+                            <canvas id="camera-canvas" style="display:none;"></canvas>
                             <div class="camera-overlay">
                                 <div class="face-guide"></div>
                             </div>
@@ -594,10 +586,10 @@
         // SR Code verification
         function verifySRCode() {
             const srCode = document.getElementById('srCode').value.trim().toUpperCase();
-            const srCodePattern = /^SR-\d{5}$/;
+            const srCodePattern = /^[A-Z]{2}-\d{5}$/;
             
             if (!srCodePattern.test(srCode)) {
-                alert('Please enter a valid SR Code (Format: SR-#####)');
+                alert('Please enter a valid SR Code (Format: XX-XXXXX)');
                 return;
             }
             
@@ -854,7 +846,7 @@
             });
             
             // Demo: Auto-fill a test SR Code
-            srCodeInput.value = 'SR-12345';
+            srCodeInput.value = 'CS-12345';
             
             // Reset timer on any activity
             document.addEventListener('click', resetTimer);
